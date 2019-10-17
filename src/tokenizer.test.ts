@@ -1,0 +1,228 @@
+import { Token, tokenize, TokenType } from './tokenizer';
+
+/* eslint-disable quotes */
+
+///////////////////
+
+function verifyToken(token: Token, type: TokenType, value?: string): boolean {
+  return (
+    token !== undefined &&
+    token.type === type &&
+    (value === undefined || token.value === value)
+  );
+}
+
+///////////////////
+
+describe('text', () => {
+  test('plain text', () => {
+    const tokens: Token[] = tokenize('plain text');
+
+    expect(tokens.length).toBe(1);
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'plain text')).toBeTruthy();
+  });
+
+  test('text with newline', () => {
+    const tokens: Token[] = tokenize('before\nafter');
+
+    expect(tokens.length).toBe(1);
+    expect(
+      verifyToken(tokens[0], TokenType.TEXT, 'before\nafter')
+    ).toBeTruthy();
+  });
+});
+
+///////////////////
+
+describe('quotes', () => {
+  test('bold text', () => {
+    const tokens: Token[] = tokenize("'''bold'''");
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, 'bold')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.BOLD)).toBeTruthy();
+  });
+
+  test('embedded bold text', () => {
+    const tokens: Token[] = tokenize("before'''bold'''after");
+
+    expect(tokens.length).toBe(5);
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'before')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TEXT, 'bold')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.TEXT, 'after')).toBeTruthy();
+  });
+
+  test('italic text', () => {
+    const tokens: Token[] = tokenize("''italic''");
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, 'italic')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.ITALIC)).toBeTruthy();
+  });
+
+  test('embedded italic text', () => {
+    const tokens: Token[] = tokenize("before''italic''after");
+
+    expect(tokens.length).toBe(5);
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'before')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TEXT, 'italic')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.TEXT, 'after')).toBeTruthy();
+  });
+
+  test('four quotes', () => {
+    const tokens: Token[] = tokenize("''''four''''");
+
+    expect(tokens.length).toBe(4);
+    expect(verifyToken(tokens[0], TokenType.TEXT, "'")).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TEXT, "four'")).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.BOLD)).toBeTruthy();
+  });
+
+  test('four quotes embedded', () => {
+    const tokens: Token[] = tokenize("before''''four''''after");
+
+    expect(tokens.length).toBe(5);
+    expect(verifyToken(tokens[0], TokenType.TEXT, "before'")).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TEXT, "four'")).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.TEXT, 'after')).toBeTruthy();
+  });
+
+  test('five quotes', () => {
+    const tokens: Token[] = tokenize("'''''five'''''");
+
+    expect(tokens.length).toBe(5);
+    expect(verifyToken(tokens[0], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TEXT, 'five')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.ITALIC)).toBeTruthy();
+  });
+
+  test('five quotes embedded', () => {
+    const tokens: Token[] = tokenize("before'''''five'''''after");
+
+    expect(tokens.length).toBe(7);
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'before')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.TEXT, 'five')).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[5], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[6], TokenType.TEXT, 'after')).toBeTruthy();
+  });
+
+  test('more than five quotes', () => {
+    const tokens: Token[] = tokenize("'''''''''nine'''''''''");
+
+    expect(tokens.length).toBe(6);
+    expect(verifyToken(tokens[0], TokenType.TEXT, "''''")).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.TEXT, "nine''''")).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[5], TokenType.ITALIC)).toBeTruthy();
+  });
+
+  test('more than five quotes embedded', () => {
+    const tokens: Token[] = tokenize("before'''''''''nine'''''''''after");
+
+    expect(tokens.length).toBe(7);
+    expect(verifyToken(tokens[0], TokenType.TEXT, "before''''")).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.TEXT, "nine''''")).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.BOLD)).toBeTruthy();
+    expect(verifyToken(tokens[5], TokenType.ITALIC)).toBeTruthy();
+    expect(verifyToken(tokens[6], TokenType.TEXT, 'after')).toBeTruthy();
+  });
+});
+
+///////////////////
+
+describe('Html tags', () => {
+  test('HTML start tag', () => {
+    const tokens: Token[] = tokenize('<code>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_START_TAG, '<')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'code')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('extension start tag', () => {
+    const tokens: Token[] = tokenize('<inputbox>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_START_TAG, '<')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'inputbox')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('single letter start tag', () => {
+    const tokens: Token[] = tokenize('<p>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_START_TAG, '<')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'p')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('start tag with space', () => {
+    const tokens: Token[] = tokenize('<math chem>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_START_TAG, '<')).toBeTruthy();
+    expect(
+      verifyToken(tokens[1], TokenType.TAG_NAME, 'math chem')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('capitalized start tag', () => {
+    const tokens: Token[] = tokenize('<DIV>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_START_TAG, '<')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'div')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('start tag with leading and trainling spaces', () => {
+    const tokens: Token[] = tokenize('<  table  >');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_START_TAG, '<')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'table')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('start tag embedded in text', () => {
+    const tokens: Token[] = tokenize('before<h2>after');
+
+    expect(tokens.length).toBe(5);
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'before')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.OPEN_START_TAG, '<')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TAG_NAME, 'h2')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.TEXT, 'after')).toBeTruthy();
+  });
+
+  test('invalid start tag', () => {
+    const tokens: Token[] = tokenize('<invalid>');
+
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens[0], TokenType.TEXT, '<invalid')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+});
+
+/* eslint-enable quotes */
