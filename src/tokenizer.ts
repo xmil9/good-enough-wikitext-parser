@@ -248,6 +248,8 @@ interface State {
   terminate(): void;
 }
 
+///////////////////
+
 // Entered when a "'" is encountered. Generates quote-based tokens like
 // 'bold', 'italic', etc.
 class QuoteState implements State {
@@ -307,6 +309,8 @@ class QuoteState implements State {
   }
 }
 
+///////////////////
+
 // Active while a prefix of a HTML start tag is read.
 class HtmlStartTagState implements State {
   private _tokenizer: Tokenizer;
@@ -354,6 +358,57 @@ class HtmlStartTagState implements State {
   }
 }
 
+///////////////////
+
+// Active while a prefix of a HTML end tag is read.
+class HtmlEndTagState implements State {
+  private _tokenizer: Tokenizer;
+  private _value: string;
+
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    this._tokenizer = tokenizer;
+    this._value = initialValue;
+  }
+
+  public next(ch: Char): State {
+    const newTag = this.tagName() + ch;
+
+    if (!isHtmlOrExtensionTagPrefix(newTag)) {
+      this.storeTokens();
+      this._tokenizer.backUpBy(1);
+      return new TextState(this._tokenizer);
+    }
+
+    // Keep reading the tag.
+    this._value += ch;
+    return this;
+  }
+
+  public terminate(): void {
+    this.storeTokens();
+  }
+
+  private storeTokens(): void {
+    if (isHtmlOrExtensionTag(this.tagName())) {
+      this._tokenizer.storeToken(TokenType.OPEN_END_TAG, '</');
+      this._tokenizer.storeToken(
+        TokenType.TAG_NAME,
+        normalizeTagName(this.tagName())
+      );
+    } else {
+      // Store a plain text token.
+      this._tokenizer.storeToken(TokenType.TEXT, this._value);
+    }
+  }
+
+  // Returns the tag name (without the leading '</').
+  private tagName(): string {
+    return this._value.substr(2);
+  }
+}
+
+///////////////////
+
 // Entered when a '<' is encountered. A pass-through state for tokens
 // initiated with a '<'.
 class OpenAngleBracketState implements State {
@@ -366,16 +421,16 @@ class OpenAngleBracketState implements State {
   }
 
   public next(ch: Char): State {
-    // switch (ch) {
-    //   case '/': {
-    //     this._value += ch;
-    //     return new HtmlEndTagState(this._tokenizer, this._value);
-    //   }
-    //   case '!': {
-    //     this._value += ch;
-    //     return new CommentStartState(this._tokenizer, this._value);
-    //   }
-    // }
+    switch (ch) {
+      case '/': {
+        this._value += ch;
+        return new HtmlEndTagState(this._tokenizer, this._value);
+      }
+      // case '!': {
+      //   this._value += ch;
+      //   return new CommentStartState(this._tokenizer, this._value);
+      // }
+    }
 
     if (isHtmlOrExtensionTagPrefix(ch)) {
       this._value += ch;
@@ -396,6 +451,8 @@ class OpenAngleBracketState implements State {
     this._tokenizer.storeToken(TokenType.TEXT, this._value);
   }
 }
+
+///////////////////
 
 // Entered when a '>' is encountered. Generates a close-tag token.
 class CloseAngleBracketState implements State {
@@ -424,6 +481,8 @@ class CloseAngleBracketState implements State {
     this._tokenizer.storeToken(TokenType.CLOSE_TAG, this._value);
   }
 }
+
+///////////////////
 
 // Collects plain text until a character for a different token is
 // encountered. Default state of FSM.

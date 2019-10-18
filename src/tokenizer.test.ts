@@ -223,6 +223,81 @@ describe('Html tags', () => {
     expect(verifyToken(tokens[0], TokenType.TEXT, '<invalid')).toBeTruthy();
     expect(verifyToken(tokens[1], TokenType.CLOSE_TAG, '>')).toBeTruthy();
   });
+
+  test('HTML end tag', () => {
+    const tokens: Token[] = tokenize('</code>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_END_TAG, '</')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'code')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('extension end tag', () => {
+    const tokens: Token[] = tokenize('</inputbox>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_END_TAG, '</')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'inputbox')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('single letter end tag', () => {
+    const tokens: Token[] = tokenize('</p>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_END_TAG, '</')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'p')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('start end with space', () => {
+    const tokens: Token[] = tokenize('</math chem>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_END_TAG, '</')).toBeTruthy();
+    expect(
+      verifyToken(tokens[1], TokenType.TAG_NAME, 'math chem')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('capitalized end tag', () => {
+    const tokens: Token[] = tokenize('</DIV>');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_END_TAG, '</')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'div')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('end tag with leading and trainling spaces', () => {
+    const tokens: Token[] = tokenize('</  table  >');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.OPEN_END_TAG, '</')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TAG_NAME, 'table')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
+
+  test('end tag embedded in text', () => {
+    const tokens: Token[] = tokenize('before</h2>after');
+
+    expect(tokens.length).toBe(5);
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'before')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.OPEN_END_TAG, '</')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TAG_NAME, 'h2')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.TEXT, 'after')).toBeTruthy();
+  });
+
+  test('invalid end tag', () => {
+    const tokens: Token[] = tokenize('</invalid>');
+
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens[0], TokenType.TEXT, '</invalid')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.CLOSE_TAG, '>')).toBeTruthy();
+  });
 });
 
 /* eslint-enable quotes */
