@@ -300,4 +300,166 @@ describe('Html tags', () => {
   });
 });
 
+///////////////////
+
+describe('comments', () => {
+  test('basic comment', () => {
+    const tokens: Token[] = tokenize('<!-- comment -->');
+
+    expect(tokens.length).toBe(3);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, ' comment ')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.COMMENT_END, '-->')).toBeTruthy();
+  });
+
+  test('single space comment', () => {
+    const tokens: Token[] = tokenize('<!-- -->');
+
+    expect(tokens.length).toBe(3);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, ' ')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.COMMENT_END, '-->')).toBeTruthy();
+  });
+
+  test('empty comment', () => {
+    const tokens: Token[] = tokenize('<!---->');
+
+    expect(tokens.length).toBe(2);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.COMMENT_END, '-->')).toBeTruthy();
+  });
+
+  test('multi line comment', () => {
+    const tokens: Token[] = tokenize('<!-- line one\nline two -->');
+
+    expect(tokens.length).toBe(3);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(
+      verifyToken(tokens[1], TokenType.TEXT, ' line one\nline two ')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.COMMENT_END, '-->')).toBeTruthy();
+  });
+
+  test('comment where start token has extra dashes (less than 4)', () => {
+    const tokens: Token[] = tokenize('<!----- comment -->');
+
+    expect(tokens.length).toBe(3);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, '--- comment ')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.COMMENT_END, '-->')).toBeTruthy();
+  });
+
+  test('comment where start token has extra dashes (4 or more)', () => {
+    // Note that this does not result in a horizontal divider token because
+    // horizontal divider markers must be at the start of a line.
+    const tokens: Token[] = tokenize('<!------- comment -->');
+
+    expect(tokens.length).toBe(3);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(
+      verifyToken(tokens[1], TokenType.TEXT, '----- comment ')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.COMMENT_END, '-->')).toBeTruthy();
+  });
+
+  test('comment where end token has extra dashes', () => {
+    const tokens: Token[] = tokenize('<!-- comment ----->');
+
+    expect(tokens.length).toBe(3);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, ' comment ---')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.COMMENT_END, '-->')).toBeTruthy();
+  });
+
+  test('multi line comment where final line starts with a horizontal divider token - LIMITATION', () => {
+    // This is incorrect! The correct token sequence should be:
+    // COMMENT_BEGIN TEXT COMMENT_END
+    // But without making the tokenizer context aware this is not possible.
+
+    const tokens: Token[] = tokenize('<!-- line one\n---->');
+
+    expect(tokens.length).toBe(4);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, ' line one\n')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.HORZ_DIVIDER, '----')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.TEXT, '>')).toBeTruthy();
+  });
+
+  test('comment with invalid start marker', () => {
+    const tokens: Token[] = tokenize('<!- comment -->');
+
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens[0], TokenType.TEXT, '<!- comment ')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.COMMENT_END, '-->')).toBeTruthy();
+  });
+
+  test('comment with invalid end marker', () => {
+    const tokens: Token[] = tokenize('<!-- comment ->');
+
+    expect(tokens.length).toBe(2);
+    expect(
+      verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
+    ).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, ' comment ->')).toBeTruthy();
+  });
+});
+
+///////////////////
+
+describe('horizontal dividers', () => {
+  test('basic horizontal divider', () => {
+    const tokens: Token[] = tokenize('----');
+
+    expect(tokens.length).toBe(1);
+    expect(verifyToken(tokens[0], TokenType.HORZ_DIVIDER, '----')).toBeTruthy();
+  });
+
+  test('horizontal divider with extra dashes', () => {
+    const tokens: Token[] = tokenize('---------');
+
+    expect(tokens.length).toBe(1);
+    expect(
+      verifyToken(tokens[0], TokenType.HORZ_DIVIDER, '---------')
+    ).toBeTruthy();
+  });
+
+  test.only('horizontal divider marker that is not at the beginning of a line', () => {
+    const tokens: Token[] = tokenize('a----');
+
+    expect(tokens.length).toBe(1);
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'a----')).toBeTruthy();
+  });
+
+  test.only('horizontal divider followed by text', () => {
+    const tokens: Token[] = tokenize('----text');
+
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens[0], TokenType.HORZ_DIVIDER, '----')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, 'text')).toBeTruthy();
+  });
+
+  test.only('invalid horizontal divider', () => {
+    const tokens: Token[] = tokenize('---');
+
+    expect(tokens.length).toBe(1);
+    expect(verifyToken(tokens[0], TokenType.TEXT, '---')).toBeTruthy();
+  });
+});
+
 /* eslint-enable quotes */

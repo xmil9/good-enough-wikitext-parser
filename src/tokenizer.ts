@@ -159,6 +159,10 @@ function isHtmlOrExtensionTagPrefix(s: string): boolean {
 
 ///////////////////
 
+const CommentStartMarker = '<!--';
+const CommentEndMarker = '-->';
+const HorzDividerMarker = '----';
+
 export enum TokenType {
   TEXT = 'text',
   ITALIC = 'italic_toggle', // ''
@@ -248,28 +252,39 @@ interface State {
   terminate(): void;
 }
 
+// Base for all state classes. Contains common data.
+class BaseState {
+  private readonly _tokenizer: Tokenizer;
+  protected value: string;
+
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    this._tokenizer = tokenizer;
+    this.value = initialValue;
+  }
+
+  protected get tokenizer(): Tokenizer {
+    return this._tokenizer;
+  }
+}
+
 ///////////////////
 
 // Entered when a "'" is encountered. Generates quote-based tokens like
 // 'bold', 'italic', etc.
-class QuoteState implements State {
-  private _tokenizer: Tokenizer;
-  private _value: string;
-
+class QuoteState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
-    this._tokenizer = tokenizer;
-    this._value = initialValue;
+    super(tokenizer, initialValue);
   }
 
   public next(ch: Char): State {
     if (ch !== SingleQuote) {
       this.storeTokens();
-      this._tokenizer.backUpBy(1);
-      return new TextState(this._tokenizer);
+      this.tokenizer.backUpBy(1);
+      return new TextState(this.tokenizer);
     }
 
     // Keep reading quotes.
-    this._value += ch;
+    this.value += ch;
     return this;
   }
 
@@ -282,7 +297,7 @@ class QuoteState implements State {
     const ItalicQuotes = 2;
     const BoldItalicQuotes = BoldQuotes + ItalicQuotes;
 
-    const numQuotes = this._value.length;
+    const numQuotes = this.value.length;
     // Quotes beyond five are just plain text before the style change. Also, for
     // four quotes one is plain text.
     let numPlainTextQuotes = 0;
@@ -296,15 +311,15 @@ class QuoteState implements State {
 
     if (numPlainTextQuotes > 0) {
       const text = SingleQuote.repeat(numPlainTextQuotes);
-      this._tokenizer.storeToken(TokenType.TEXT, text);
+      this.tokenizer.storeToken(TokenType.TEXT, text);
     }
     if (isBold) {
       // eslint-disable-next-line quotes
-      this._tokenizer.storeToken(TokenType.BOLD, "'''");
+      this.tokenizer.storeToken(TokenType.BOLD, "'''");
     }
     if (isItalic) {
       // eslint-disable-next-line quotes
-      this._tokenizer.storeToken(TokenType.ITALIC, "''");
+      this.tokenizer.storeToken(TokenType.ITALIC, "''");
     }
   }
 }
@@ -312,13 +327,9 @@ class QuoteState implements State {
 ///////////////////
 
 // Active while a prefix of a HTML start tag is read.
-class HtmlStartTagState implements State {
-  private _tokenizer: Tokenizer;
-  private _value: string;
-
+class HtmlStartTagState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
-    this._tokenizer = tokenizer;
-    this._value = initialValue;
+    super(tokenizer, initialValue);
   }
 
   public next(ch: Char): State {
@@ -326,12 +337,12 @@ class HtmlStartTagState implements State {
 
     if (!isHtmlOrExtensionTagPrefix(newTag)) {
       this.storeTokens();
-      this._tokenizer.backUpBy(1);
-      return new TextState(this._tokenizer);
+      this.tokenizer.backUpBy(1);
+      return new TextState(this.tokenizer);
     }
 
     // Keep reading the tag.
-    this._value += ch;
+    this.value += ch;
     return this;
   }
 
@@ -341,33 +352,29 @@ class HtmlStartTagState implements State {
 
   private storeTokens(): void {
     if (isHtmlOrExtensionTag(this.tagName())) {
-      this._tokenizer.storeToken(TokenType.OPEN_START_TAG, '<');
-      this._tokenizer.storeToken(
+      this.tokenizer.storeToken(TokenType.OPEN_START_TAG, '<');
+      this.tokenizer.storeToken(
         TokenType.TAG_NAME,
         normalizeTagName(this.tagName())
       );
     } else {
       // Store a plain text token.
-      this._tokenizer.storeToken(TokenType.TEXT, this._value);
+      this.tokenizer.storeToken(TokenType.TEXT, this.value);
     }
   }
 
   // Returns the tag name (without the leading '<').
   private tagName(): string {
-    return this._value.substr(1);
+    return this.value.substring(1);
   }
 }
 
 ///////////////////
 
 // Active while a prefix of a HTML end tag is read.
-class HtmlEndTagState implements State {
-  private _tokenizer: Tokenizer;
-  private _value: string;
-
+class HtmlEndTagState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
-    this._tokenizer = tokenizer;
-    this._value = initialValue;
+    super(tokenizer, initialValue);
   }
 
   public next(ch: Char): State {
@@ -375,12 +382,12 @@ class HtmlEndTagState implements State {
 
     if (!isHtmlOrExtensionTagPrefix(newTag)) {
       this.storeTokens();
-      this._tokenizer.backUpBy(1);
-      return new TextState(this._tokenizer);
+      this.tokenizer.backUpBy(1);
+      return new TextState(this.tokenizer);
     }
 
     // Keep reading the tag.
-    this._value += ch;
+    this.value += ch;
     return this;
   }
 
@@ -390,20 +397,56 @@ class HtmlEndTagState implements State {
 
   private storeTokens(): void {
     if (isHtmlOrExtensionTag(this.tagName())) {
-      this._tokenizer.storeToken(TokenType.OPEN_END_TAG, '</');
-      this._tokenizer.storeToken(
+      this.tokenizer.storeToken(TokenType.OPEN_END_TAG, '</');
+      this.tokenizer.storeToken(
         TokenType.TAG_NAME,
         normalizeTagName(this.tagName())
       );
     } else {
       // Store a plain text token.
-      this._tokenizer.storeToken(TokenType.TEXT, this._value);
+      this.tokenizer.storeToken(TokenType.TEXT, this.value);
     }
   }
 
   // Returns the tag name (without the leading '</').
   private tagName(): string {
-    return this._value.substr(2);
+    return this.value.substring(2);
+  }
+}
+
+///////////////////
+
+// Active while a prefix of a comment start marker '<!--' is read.
+class CommentStartState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    const newValue = this.value + ch;
+
+    if (newValue === CommentStartMarker) {
+      this.value = newValue;
+      this.storeTokens();
+      return new TextState(this.tokenizer);
+    } else if (!CommentStartMarker.startsWith(newValue)) {
+      // Not a comment. Switch to text.
+      return new TextState(this.tokenizer, newValue);
+    }
+
+    // Keep reading the marker.
+    this.value = newValue;
+    return this;
+  }
+
+  public terminate(): void {
+    // Store incomplete marker as text.
+    const textState = new TextState(this.tokenizer, this.value);
+    textState.terminate();
+  }
+
+  private storeTokens(): void {
+    this.tokenizer.storeToken(TokenType.COMMENT_BEGIN, this.value);
   }
 }
 
@@ -411,36 +454,32 @@ class HtmlEndTagState implements State {
 
 // Entered when a '<' is encountered. A pass-through state for tokens
 // initiated with a '<'.
-class OpenAngleBracketState implements State {
-  private _tokenizer: Tokenizer;
-  private _value: string;
-
+class OpenAngleBracketState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
-    this._tokenizer = tokenizer;
-    this._value = initialValue;
+    super(tokenizer, initialValue);
   }
 
   public next(ch: Char): State {
     switch (ch) {
       case '/': {
-        this._value += ch;
-        return new HtmlEndTagState(this._tokenizer, this._value);
+        this.value += ch;
+        return new HtmlEndTagState(this.tokenizer, this.value);
       }
-      // case '!': {
-      //   this._value += ch;
-      //   return new CommentStartState(this._tokenizer, this._value);
-      // }
+      case '!': {
+        this.value += ch;
+        return new CommentStartState(this.tokenizer, this.value);
+      }
     }
 
     if (isHtmlOrExtensionTagPrefix(ch)) {
-      this._value += ch;
-      return new HtmlStartTagState(this._tokenizer, this._value);
+      this.value += ch;
+      return new HtmlStartTagState(this.tokenizer, this.value);
     }
 
     // It's just plain text.
     this.storeTokens();
-    this._tokenizer.backUpBy(1);
-    return new TextState(this._tokenizer);
+    this.tokenizer.backUpBy(1);
+    return new TextState(this.tokenizer);
   }
 
   public terminate(): void {
@@ -448,26 +487,22 @@ class OpenAngleBracketState implements State {
   }
 
   private storeTokens() {
-    this._tokenizer.storeToken(TokenType.TEXT, this._value);
+    this.tokenizer.storeToken(TokenType.TEXT, this.value);
   }
 }
 
 ///////////////////
 
 // Entered when a '>' is encountered. Generates a close-tag token.
-class CloseAngleBracketState implements State {
-  private _tokenizer: Tokenizer;
-  private _value: string;
-
+class CloseAngleBracketState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
-    this._tokenizer = tokenizer;
-    this._value = initialValue;
+    super(tokenizer, initialValue);
   }
 
   public next(ch: Char): State {
     this.storeTokens();
-    this._tokenizer.backUpBy(1);
-    return new TextState(this._tokenizer);
+    this.tokenizer.backUpBy(1);
+    return new TextState(this.tokenizer);
   }
 
   public terminate(): void {
@@ -478,7 +513,98 @@ class CloseAngleBracketState implements State {
     // Whether this is a closing tag or a plain '>' depends on the context.
     // Store a close-tag token and leave the context-based processing to the
     // parser.
-    this._tokenizer.storeToken(TokenType.CLOSE_TAG, this._value);
+    this.tokenizer.storeToken(TokenType.CLOSE_TAG, this.value);
+  }
+}
+
+///////////////////
+
+// Entered when a '----' is encountered. Will continue to read trailing
+// dashes.
+class HorzDividerState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    if (ch !== '-') {
+      this.storeTokens();
+      return new TextState(this.tokenizer, ch);
+    }
+
+    this.value += ch;
+    return this;
+  }
+
+  public terminate(): void {
+    this.storeTokens();
+  }
+
+  private storeTokens(): void {
+    this.tokenizer.storeToken(TokenType.HORZ_DIVIDER, this.value);
+  }
+}
+
+///////////////////
+
+// Entered when a '-' is encountered. A pass-through state for tokens
+// initiated with a '-'.
+class DashState extends BaseState implements State {
+  private readonly _atStartOfLine: boolean;
+
+  constructor(
+    tokenizer: Tokenizer,
+    initialValue: string,
+    atStartOfLine: boolean
+  ) {
+    super(tokenizer, initialValue);
+    this._atStartOfLine = atStartOfLine;
+  }
+
+  public next(ch: Char): State {
+    const newValue = this.value + ch;
+
+    // Limitation:
+    //   <!-- comment
+    //   ---->
+    // Will result in:
+    //   COMMENT_BEGIN TEXT HORZ_DIVIDER TEXT
+    // Instead of:
+    //   COMMENT_BEGIN TEXT COMMENT_END
+    // Solutions:
+    // - Maintain context in tokenizer.
+    // - Handle in parser.
+
+    if (newValue.endsWith(CommentEndMarker)) {
+      this.value = newValue;
+      this.storeCommentEndTokens();
+      return new TextState(this.tokenizer);
+    } else if (this._atStartOfLine && newValue === HorzDividerMarker) {
+      return new HorzDividerState(this.tokenizer, newValue);
+    } else if (ch === '-') {
+      this.value = newValue;
+      return this;
+    }
+
+    // Not matching anything. Revert back to text.
+    return new TextState(this.tokenizer, newValue);
+  }
+
+  public terminate(): void {
+    // Store incomplete marker as text.
+    const textState = new TextState(this.tokenizer, this.value);
+    textState.terminate();
+  }
+
+  private storeCommentEndTokens(): void {
+    const leadingDashes = this.value.substring(
+      0,
+      this.value.length - CommentEndMarker.length
+    );
+    if (leadingDashes) {
+      this.tokenizer.storeToken(TokenType.TEXT, leadingDashes);
+    }
+    this.tokenizer.storeToken(TokenType.COMMENT_END, CommentEndMarker);
   }
 }
 
@@ -486,13 +612,9 @@ class CloseAngleBracketState implements State {
 
 // Collects plain text until a character for a different token is
 // encountered. Default state of FSM.
-class TextState implements State {
-  private _tokenizer: Tokenizer;
-  private _value: string;
-
+class TextState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue?: string) {
-    this._tokenizer = tokenizer;
-    this._value = initialValue || '';
+    super(tokenizer, initialValue || '');
   }
 
   public next(ch: Char): State {
@@ -503,7 +625,7 @@ class TextState implements State {
     }
 
     // Keep reading text.
-    this._value += ch;
+    this.value += ch;
     return this;
   }
 
@@ -514,70 +636,68 @@ class TextState implements State {
   // Transitions to a new state based on a given character.
   // Returns the new state or 'undefined' for no transition.
   private transition(ch: Char): State {
-    const isStartOfLine: boolean = this.lastChar() === '\n';
+    const isBOL = this.isBeginningOfLine();
 
     switch (ch) {
       case SingleQuote: {
-        return new QuoteState(this._tokenizer, ch);
+        return new QuoteState(this.tokenizer, ch);
       }
       // case '{': {
-      //   return new BraceState(this._tokenizer, ch);
+      //   return new BraceState(this.tokenizer, ch);
       // }
       // case '[': {
-      //   return new BracketState(this._tokenizer, ch);
+      //   return new BracketState(this.tokenizer, ch);
       // }
       case '<': {
-        return new OpenAngleBracketState(this._tokenizer, ch);
+        return new OpenAngleBracketState(this.tokenizer, ch);
       }
       case '>': {
-        return new CloseAngleBracketState(this._tokenizer, ch);
+        return new CloseAngleBracketState(this.tokenizer, ch);
       }
       // case '~': {
-      //   return new TildeState(this._tokenizer, ch);
+      //   return new TildeState(this.tokenizer, ch);
       // }
       // case '=': {
-      //   if (isStartOfLine) {
-      //     return new EqualSignState(this._tokenizer, ch);
+      //   if (isBOL) {
+      //     return new EqualSignState(this.tokenizer, ch);
       //   }
       // }
       // case '*': {
-      //   if (isStartOfLine) {
-      //     return new StarState(this._tokenizer, ch);
+      //   if (isBOL) {
+      //     return new StarState(this.tokenizer, ch);
       //   }
       // }
       // case '#': {
-      //   if (isStartOfLine) {
-      //     return new HashState(this._tokenizer, ch);
+      //   if (isBOL) {
+      //     return new HashState(this.tokenizer, ch);
       //   }
       // }
       // case ';': {
-      //   if (isStartOfLine) {
-      //     return new SemicolonState(this._tokenizer, ch);
+      //   if (isBOL) {
+      //     return new SemicolonState(this.tokenizer, ch);
       //   }
       // }
       // case ':': {
-      //   if (isStartOfLine) {
-      //     return new ColonState(this._tokenizer, ch);
+      //   if (isBOL) {
+      //     return new ColonState(this.tokenizer, ch);
       //   }
       // }
-      // case '-': {
-      //   if (isStartOfLine) {
-      //     return new DashState(this._tokenizer, ch);
-      //   }
-      // }
+      case '-': {
+        return new DashState(this.tokenizer, ch, isBOL);
+      }
       // case '_': {
-      //   return new UnderscoreState(this._tokenizer, ch);
+      //   return new UnderscoreState(this.tokenizer, ch);
       // }
       // case '&': {
-      //   return new AmpersandState(this._tokenizer, ch);
+      //   return new AmpersandState(this.tokenizer, ch);
       // }
       // case ' ': {
-      //   if (isStartOfLine) {
-      //     return new SpaceState(this._tokenizer, ch);
+      //   if (isBOL) {
+      //     return new SpaceState(this.tokenizer, ch);
       //   }
       // }
       // case '/': {
-      //   return new SlashState(this._tokenizer, ch);
+      //   return new SlashState(this.tokenizer, ch);
       // }
     }
 
@@ -586,16 +706,20 @@ class TextState implements State {
   }
 
   private storeTokens(): void {
-    if (this._value.length > 0) {
-      this._tokenizer.storeToken(TokenType.TEXT, this._value);
+    if (this.value.length > 0) {
+      this.tokenizer.storeToken(TokenType.TEXT, this.value);
     }
   }
 
-  // Returns the last character of the collected value.
+  private isBeginningOfLine(): boolean {
+    const lastCh = this.lastChar();
+    return lastCh === '\n' || lastCh === '';
+  }
+
+  // Returns the last character of the read text (even across a previous tokens).
+  // Returns '' when there is no last character.
   private lastChar(): Char {
-    return this._value.length > 0
-      ? this._value[this._value.length - 1]
-      : undefined;
+    return this.tokenizer.lookBackBy(1);
   }
 }
 
@@ -664,11 +788,24 @@ class Tokenizer {
   }
 
   // Returns the next few characters. Will not change the read position of the
-  // lexer.
-  public peekAheadBy(numChars: number): string {
-    const numCharsLeft = this._text.length - this._pos;
-    const endIdx = this._pos + Math.min(numChars, numCharsLeft);
+  // tokenizer.
+  public lookAheadBy(numChars: number): string {
+    const numCharsFollowing = this._text.length - this._pos;
+    const endIdx = this._pos + Math.min(numChars, numCharsFollowing);
     return this._text.substring(this._pos, endIdx);
+  }
+
+  public lookBackBy(numChars: number): string {
+    // The stored position is the position of the next character to be read.
+    // So, we have to go back not only to the previous character (which is
+    // the one currently processed by the code) but the one before that.
+    if (this._pos <= 1) {
+      return '';
+    }
+    const curCharPos = this._pos - 1;
+    const numCharsAlreadyRead = curCharPos;
+    const startIdx = curCharPos - Math.min(numChars, numCharsAlreadyRead);
+    return this._text.substring(startIdx, curCharPos);
   }
 
   // Returns the current line number.
