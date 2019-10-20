@@ -33,6 +33,7 @@ const PipeChar = '|';
 const DashChar = '-';
 const SlackChar = '/';
 const ExclamationChar = '!';
+const ColonChar = ':';
 
 const BoldMarker = "'''"; // eslint-disable-line quotes
 const ItalicMarker = "''"; // eslint-disable-line quotes
@@ -618,6 +619,24 @@ class PipeState extends BaseState implements State {
 
 ///////////////////
 
+// Entered when a ':' is encountered.
+class ColonState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    this.tokenizer.storeToken(TokenType.COLON, ColonChar);
+    this.tokenizer.backUpBy(1);
+    return new TextState(this.tokenizer);
+  }
+
+  public terminate(): void {
+    this.tokenizer.storeToken(TokenType.COLON, ColonChar);
+  }
+}
+///////////////////
+
 // Collects plain text until a character for a different token is
 // encountered. Default state of FSM.
 class TextState extends BaseState implements State {
@@ -691,11 +710,9 @@ class TextState extends BaseState implements State {
       //     return new SemicolonState(this.tokenizer, ch);
       //   }
       // }
-      // case ':': {
-      //   if (isBOL) {
-      //     return new ColonState(this.tokenizer, ch);
-      //   }
-      // }
+      case ColonChar: {
+        return new ColonState(this.tokenizer, ch);
+      }
       case DashChar: {
         return new DashState(this.tokenizer, ch, isBOL);
       }

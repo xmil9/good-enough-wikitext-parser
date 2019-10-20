@@ -500,13 +500,12 @@ describe('templates', () => {
   test('template with namespace', () => {
     const tokens: Token[] = tokenize('{{ns:name}}');
 
-    // todo
-    //expect(tokens.length).toBe(5);
-    //expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
-    //expect(verifyToken(tokens[1], TokenType.TEXT, 'ns')).toBeTruthy();
-    //expect(verifyToken(tokens[2], TokenType.COLON, ':')).toBeTruthy();
-    //expect(verifyToken(tokens[3], TokenType.TEXT, 'name')).toBeTruthy();
-    //expect(verifyToken(tokens[4], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
+    expect(tokens.length).toBe(5);
+    expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, 'ns')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.COLON, ':')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.TEXT, 'name')).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
   });
 
   test('nested template', () => {
