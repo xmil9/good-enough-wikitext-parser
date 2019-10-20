@@ -44,19 +44,19 @@ describe('text', () => {
   test('plain text', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('plain text'));
 
-    expect(tokens.length).toBe(1);
     expect(
       verifyToken(tokens.next(), TokenType.TEXT, 'plain text')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('text with newline', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('before\nafter'));
 
-    expect(tokens.length).toBe(3);
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'before')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'after')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 });
 
@@ -66,10 +66,10 @@ describe('quotes', () => {
   test('bold text', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize("'''bold'''"));
 
-    expect(tokens.length).toBe(3);
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'bold')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('embedded bold text', () => {
@@ -77,21 +77,21 @@ describe('quotes', () => {
       tokenize("before'''bold'''after")
     );
 
-    expect(tokens.length).toBe(5);
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'before')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'bold')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'after')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('italic text', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize("''italic''"));
 
-    expect(tokens.length).toBe(3);
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'italic')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('embedded italic text', () => {
@@ -99,22 +99,22 @@ describe('quotes', () => {
       tokenize("before''italic''after")
     );
 
-    expect(tokens.length).toBe(5);
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'before')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'italic')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'after')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('four quotes', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize("''''four''''"));
 
-    expect(tokens.length).toBe(4);
     expect(verifyToken(tokens.next(), TokenType.TEXT, "'")).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, "four'")).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('four quotes embedded', () => {
@@ -122,23 +122,23 @@ describe('quotes', () => {
       tokenize("before''''four''''after")
     );
 
-    expect(tokens.length).toBe(5);
     expect(verifyToken(tokens.next(), TokenType.TEXT, "before'")).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, "four'")).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'after')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('five quotes', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize("'''''five'''''"));
 
-    expect(tokens.length).toBe(5);
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'five')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('five quotes embedded', () => {
@@ -146,7 +146,6 @@ describe('quotes', () => {
       tokenize("before'''''five'''''after")
     );
 
-    expect(tokens.length).toBe(7);
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'before')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
@@ -154,6 +153,7 @@ describe('quotes', () => {
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'after')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('more than five quotes', () => {
@@ -161,13 +161,13 @@ describe('quotes', () => {
       tokenize("'''''''''nine'''''''''")
     );
 
-    expect(tokens.length).toBe(6);
     expect(verifyToken(tokens.next(), TokenType.TEXT, "''''")).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, "nine''''")).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('more than five quotes embedded', () => {
@@ -175,7 +175,6 @@ describe('quotes', () => {
       tokenize("before'''''''''nine'''''''''after")
     );
 
-    expect(tokens.length).toBe(7);
     expect(
       verifyToken(tokens.next(), TokenType.TEXT, "before''''")
     ).toBeTruthy();
@@ -185,6 +184,7 @@ describe('quotes', () => {
     expect(verifyToken(tokens.next(), TokenType.BOLD)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.ITALIC)).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'after')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 });
 
@@ -194,18 +194,17 @@ describe('Html tags', () => {
   test('HTML start tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<code>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_START_TAG, '<')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TAG_NAME, 'code')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('extension start tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<inputbox>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_START_TAG, '<')
     ).toBeTruthy();
@@ -213,23 +212,23 @@ describe('Html tags', () => {
       verifyToken(tokens.next(), TokenType.TAG_NAME, 'inputbox')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('single letter start tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<p>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_START_TAG, '<')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TAG_NAME, 'p')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('start tag with space', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<math chem>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_START_TAG, '<')
     ).toBeTruthy();
@@ -237,23 +236,23 @@ describe('Html tags', () => {
       verifyToken(tokens.next(), TokenType.TAG_NAME, 'math chem')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('capitalized start tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<DIV>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_START_TAG, '<')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TAG_NAME, 'div')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('start tag with leading and trainling spaces', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<  table  >'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_START_TAG, '<')
     ).toBeTruthy();
@@ -261,6 +260,7 @@ describe('Html tags', () => {
       verifyToken(tokens.next(), TokenType.TAG_NAME, 'table')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('start tag embedded in text', () => {
@@ -268,7 +268,6 @@ describe('Html tags', () => {
       tokenize('before<h2>after')
     );
 
-    expect(tokens.length).toBe(5);
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'before')).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_START_TAG, '<')
@@ -276,31 +275,31 @@ describe('Html tags', () => {
     expect(verifyToken(tokens.next(), TokenType.TAG_NAME, 'h2')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'after')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('invalid start tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<invalid>'));
 
-    expect(tokens.length).toBe(2);
     expect(verifyToken(tokens.next(), TokenType.TEXT, '<invalid')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('HTML end tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('</code>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_END_TAG, '</')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TAG_NAME, 'code')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('extension end tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('</inputbox>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_END_TAG, '</')
     ).toBeTruthy();
@@ -308,23 +307,23 @@ describe('Html tags', () => {
       verifyToken(tokens.next(), TokenType.TAG_NAME, 'inputbox')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('single letter end tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('</p>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_END_TAG, '</')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TAG_NAME, 'p')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('start end with space', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('</math chem>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_END_TAG, '</')
     ).toBeTruthy();
@@ -332,23 +331,23 @@ describe('Html tags', () => {
       verifyToken(tokens.next(), TokenType.TAG_NAME, 'math chem')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('capitalized end tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('</DIV>'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_END_TAG, '</')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TAG_NAME, 'div')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('end tag with leading and trainling spaces', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('</  table  >'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_END_TAG, '</')
     ).toBeTruthy();
@@ -356,6 +355,7 @@ describe('Html tags', () => {
       verifyToken(tokens.next(), TokenType.TAG_NAME, 'table')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('end tag embedded in text', () => {
@@ -363,7 +363,6 @@ describe('Html tags', () => {
       tokenize('before</h2>after')
     );
 
-    expect(tokens.length).toBe(5);
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'before')).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.OPEN_END_TAG, '</')
@@ -371,16 +370,17 @@ describe('Html tags', () => {
     expect(verifyToken(tokens.next(), TokenType.TAG_NAME, 'h2')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'after')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('invalid end tag', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('</invalid>'));
 
-    expect(tokens.length).toBe(2);
     expect(
       verifyToken(tokens.next(), TokenType.TEXT, '</invalid')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 });
 
@@ -392,7 +392,6 @@ describe('comments', () => {
       tokenize('<!-- comment -->')
     );
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -402,12 +401,12 @@ describe('comments', () => {
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('single space comment', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<!-- -->'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -415,18 +414,19 @@ describe('comments', () => {
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('empty comment', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('<!---->'));
 
-    expect(tokens.length).toBe(2);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('multi line comment', () => {
@@ -434,7 +434,6 @@ describe('comments', () => {
       tokenize('<!-- line one\nline two -->')
     );
 
-    expect(tokens.length).toBe(5);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -448,6 +447,7 @@ describe('comments', () => {
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('comment where start token has extra dashes (less than 4)', () => {
@@ -455,7 +455,6 @@ describe('comments', () => {
       tokenize('<!----- comment -->')
     );
 
-    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -466,6 +465,7 @@ describe('comments', () => {
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('comment where start token has extra dashes (4 or more)', () => {
@@ -475,7 +475,6 @@ describe('comments', () => {
       tokenize('<!------- comment -->')
     );
 
-    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -486,6 +485,7 @@ describe('comments', () => {
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('comment where end token has extra dashes', () => {
@@ -493,7 +493,6 @@ describe('comments', () => {
       tokenize('<!-- comment ----->')
     );
 
-    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -504,6 +503,7 @@ describe('comments', () => {
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('multi line comment where final line starts with a horizontal divider token', () => {
@@ -511,7 +511,6 @@ describe('comments', () => {
       tokenize('<!-- line one\n---->')
     );
 
-    expect(tokens.length).toBe(5);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -523,6 +522,7 @@ describe('comments', () => {
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('comment with invalid start marker', () => {
@@ -530,13 +530,13 @@ describe('comments', () => {
       tokenize('<!- comment -->')
     );
 
-    expect(tokens.length).toBe(2);
     expect(
       verifyToken(tokens.next(), TokenType.TEXT, '<!- comment ')
     ).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('comment with invalid end marker', () => {
@@ -544,7 +544,6 @@ describe('comments', () => {
       tokenize('<!-- comment ->')
     );
 
-    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -553,6 +552,7 @@ describe('comments', () => {
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.DASHES, '-')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 });
 
@@ -562,40 +562,40 @@ describe('horizontal dividers', () => {
   test('basic horizontal divider', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('----'));
 
-    expect(tokens.length).toBe(1);
     expect(verifyToken(tokens.next(), TokenType.DASHES, '----')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('horizontal divider with extra dashes', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('---------'));
 
-    expect(tokens.length).toBe(1);
     expect(
       verifyToken(tokens.next(), TokenType.DASHES, '---------')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('horizontal divider marker that is not at the beginning of a line', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('a----'));
 
-    expect(tokens.length).toBe(2);
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'a')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.DASHES, '----')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('horizontal divider followed by text', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('----text'));
 
-    expect(tokens.length).toBe(2);
     expect(verifyToken(tokens.next(), TokenType.DASHES, '----')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'text')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('invalid horizontal divider', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('---'));
 
-    expect(tokens.length).toBe(1);
     expect(verifyToken(tokens.next(), TokenType.DASHES, '---')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 });
 
@@ -605,7 +605,6 @@ describe('templates', () => {
   test('basic template', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('{{name}}'));
 
-    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_BEGIN, '{{')
     ).toBeTruthy();
@@ -613,18 +612,19 @@ describe('templates', () => {
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_END, '}}')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('empty template', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('{{}}'));
 
-    expect(tokens.length).toBe(2);
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_BEGIN, '{{')
     ).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_END, '}}')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('template with parameters', () => {
@@ -632,7 +632,6 @@ describe('templates', () => {
       tokenize('{{name|param1|param2}}')
     );
 
-    expect(tokens.length).toBe(7);
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_BEGIN, '{{')
     ).toBeTruthy();
@@ -644,12 +643,12 @@ describe('templates', () => {
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_END, '}}')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('template with namespace', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('{{ns:name}}'));
 
-    expect(tokens.length).toBe(5);
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_BEGIN, '{{')
     ).toBeTruthy();
@@ -659,13 +658,13 @@ describe('templates', () => {
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_END, '}}')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('nested template', () => {
     // This might not be valid wikitext. The parser should detect it.
     const tokens: TokenIterator = new TokenIterator(tokenize('{{{{}}}}'));
 
-    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_BEGIN, '{{')
     ).toBeTruthy();
@@ -678,26 +677,27 @@ describe('templates', () => {
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_END, '}}')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('invalid template start', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('{name}}'));
 
-    expect(tokens.length).toBe(2);
     expect(verifyToken(tokens.next(), TokenType.TEXT, '{name')).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_END, '}}')
     ).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 
   test('invalid template end', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('{{name}'));
 
-    expect(tokens.length).toBe(2);
     expect(
       verifyToken(tokens.next(), TokenType.TEMPLATE_BEGIN, '{{')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'name}')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 });
 
@@ -707,11 +707,11 @@ describe('tables', () => {
   test('empty table', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('{||}'));
 
-    expect(tokens.length).toBe(2);
     expect(
       verifyToken(tokens.next(), TokenType.TABLE_BEGIN, '{|')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TABLE_END, '|}')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
   });
 });
 
