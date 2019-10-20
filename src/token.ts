@@ -6,6 +6,7 @@
 
 export enum TokenType {
   TEXT = 'text',
+  EOL = 'eol', // '\n'
   ITALIC = 'italic-toggle', // ''
   BOLD = 'bold-toggle', // '''
   NEW_PARAGRAPH = 'new-paragraph', // blank line

@@ -31,7 +31,7 @@ const AngleOpenChar = '<';
 const AngleCloseChar = '>';
 const PipeChar = '|';
 const DashChar = '-';
-const SlackChar = '/';
+const SlashChar = '/';
 const ExclamationChar = '!';
 const ColonChar = ':';
 
@@ -396,7 +396,7 @@ class OpenAngleBracketState extends BaseState implements State {
 
   public next(ch: Char): State {
     switch (ch) {
-      case SlackChar: {
+      case SlashChar: {
         this.value += ch;
         return new HtmlEndTagState(this.tokenizer, this.value);
       }
@@ -619,24 +619,6 @@ class PipeState extends BaseState implements State {
 
 ///////////////////
 
-// Entered when a ':' is encountered.
-class ColonState extends BaseState implements State {
-  constructor(tokenizer: Tokenizer, initialValue: string) {
-    super(tokenizer, initialValue);
-  }
-
-  public next(ch: Char): State {
-    this.tokenizer.storeToken(TokenType.COLON, ColonChar);
-    this.tokenizer.backUpBy(1);
-    return new TextState(this.tokenizer);
-  }
-
-  public terminate(): void {
-    this.tokenizer.storeToken(TokenType.COLON, ColonChar);
-  }
-}
-///////////////////
-
 // Collects plain text until a character for a different token is
 // encountered. Default state of FSM.
 class TextState extends BaseState implements State {
@@ -711,7 +693,7 @@ class TextState extends BaseState implements State {
       //   }
       // }
       case ColonChar: {
-        return new ColonState(this.tokenizer, ch);
+        return this.processSingleCharacterToken(TokenType.COLON, ch);
       }
       case DashChar: {
         return new DashState(this.tokenizer, ch, isBOL);
@@ -727,13 +709,26 @@ class TextState extends BaseState implements State {
       //     return new SpaceState(this.tokenizer, ch);
       //   }
       // }
-      // case SlackChar: {
+      // case SlashChar: {
       //   return new SlashState(this.tokenizer, ch);
       // }
+      case EOLChar: {
+        return this.processSingleCharacterToken(TokenType.EOL, ch);
+      }
     }
 
     // No transition.
     return undefined;
+  }
+
+  private processSingleCharacterToken(type: TokenType, ch: Char): State {
+    // Store the collected text token.
+    this.storeTokens();
+    this.value = '';
+    // Store the single character token.
+    this.tokenizer.storeToken(type, ch);
+    // Continue with a new text token.
+    return new TextState(this.tokenizer);
   }
 
   private storeTokens(): void {
