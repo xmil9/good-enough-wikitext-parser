@@ -462,4 +462,62 @@ describe('horizontal dividers', () => {
   });
 });
 
+///////////////////
+
+describe('templates', () => {
+  test('basic template', () => {
+    const tokens: Token[] = tokenize('{{name}}');
+
+    expect(tokens.length).toBe(3);
+    expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'name')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
+  });
+
+  test('empty template', () => {
+    const tokens: Token[] = tokenize('{{}}');
+
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
+  });
+
+  test('template with parameters', () => {
+    const tokens: Token[] = tokenize('{{name|param1|param2}}');
+
+    expect(tokens.length).toBe(7);
+    expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, 'name')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.TEXT, 'param1')).toBeTruthy();
+    expect(verifyToken(tokens[4], TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens[5], TokenType.TEXT, 'param2')).toBeTruthy();
+    expect(verifyToken(tokens[6], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
+  });
+
+  test('template with namespace', () => {
+    const tokens: Token[] = tokenize('{{ns:name}}');
+
+    // todo
+    //expect(tokens.length).toBe(5);
+    //expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
+    //expect(verifyToken(tokens[1], TokenType.TEXT, 'ns')).toBeTruthy();
+    //expect(verifyToken(tokens[2], TokenType.COLON, ':')).toBeTruthy();
+    //expect(verifyToken(tokens[3], TokenType.TEXT, 'name')).toBeTruthy();
+    //expect(verifyToken(tokens[4], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
+  });
+});
+
+///////////////////
+
+describe('tables', () => {
+  test('empty table', () => {
+    const tokens: Token[] = tokenize('{||}');
+
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens[0], TokenType.TABLE_END, '{|')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TABLE_END, '|}')).toBeTruthy();
+  });
+});
+
 /* eslint-enable quotes */

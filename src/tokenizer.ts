@@ -159,9 +159,15 @@ function isHtmlOrExtensionTagPrefix(s: string): boolean {
 
 ///////////////////
 
-const CommentStartMarker = '<!--';
+const BoldMarker = "'''"; // eslint-disable-line quotes
+const ItalixMarker = "''"; // eslint-disable-line quotes
+const CommentBeginMarker = '<!--';
 const CommentEndMarker = '-->';
 const HorzDividerMarker = '----';
+const TemplateBeginMarker = '{{';
+const TemplateEndMarker = '{{';
+const TableBeginMarker = '{|';
+const TableEndMarker = '{|';
 
 export enum TokenType {
   TEXT = 'text',
@@ -314,12 +320,10 @@ class QuoteState extends BaseState implements State {
       this.tokenizer.storeToken(TokenType.TEXT, text);
     }
     if (isBold) {
-      // eslint-disable-next-line quotes
-      this.tokenizer.storeToken(TokenType.BOLD, "'''");
+      this.tokenizer.storeToken(TokenType.BOLD, BoldMarker);
     }
     if (isItalic) {
-      // eslint-disable-next-line quotes
-      this.tokenizer.storeToken(TokenType.ITALIC, "''");
+      this.tokenizer.storeToken(TokenType.ITALIC, ItalixMarker);
     }
   }
 }
@@ -425,11 +429,11 @@ class CommentStartState extends BaseState implements State {
   public next(ch: Char): State {
     const newValue = this.value + ch;
 
-    if (newValue === CommentStartMarker) {
+    if (newValue === CommentBeginMarker) {
       this.value = newValue;
       this.storeTokens();
       return new TextState(this.tokenizer);
-    } else if (!CommentStartMarker.startsWith(newValue)) {
+    } else if (!CommentBeginMarker.startsWith(newValue)) {
       // Not a comment. Switch to text.
       return new TextState(this.tokenizer, newValue);
     }
@@ -610,6 +614,90 @@ class DashState extends BaseState implements State {
 
 ///////////////////
 
+// Entered when a '{' is encountered.
+class BraceOpenState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    const newValue = this.value + ch;
+
+    if (newValue === TableBeginMarker) {
+      this.tokenizer.storeToken(TokenType.TABLE_BEGIN, newValue);
+      return new TextState(this.tokenizer);
+    } else if (newValue === TemplateBeginMarker) {
+      this.tokenizer.storeToken(TokenType.TEMPLATE_BEGIN, newValue);
+      return new TextState(this.tokenizer);
+    }
+
+    // Not matching anything. Revert back to text.
+    return new TextState(this.tokenizer, newValue);
+  }
+
+  public terminate(): void {
+    // Store incomplete marker as text.
+    const textState = new TextState(this.tokenizer, this.value);
+    textState.terminate();
+  }
+}
+
+///////////////////
+
+// Entered when a '}' is encountered.
+class BraceCloseState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    const newValue = this.value + ch;
+
+    if (newValue === TemplateEndMarker) {
+      this.tokenizer.storeToken(TokenType.TEMPLATE_END, newValue);
+      return new TextState(this.tokenizer);
+    }
+
+    // Not matching anything. Revert back to text.
+    return new TextState(this.tokenizer, newValue);
+  }
+
+  public terminate(): void {
+    // Store incomplete marker as text.
+    const textState = new TextState(this.tokenizer, this.value);
+    textState.terminate();
+  }
+}
+
+///////////////////
+
+// Entered when a '|' is encountered.
+class PipeState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    const newValue = this.value + ch;
+
+    if (newValue === TableEndMarker) {
+      this.tokenizer.storeToken(TokenType.TABLE_END, newValue);
+      return new TextState(this.tokenizer);
+    }
+
+    // Individual pipe.
+    this.tokenizer.storeToken(TokenType.PIPE, '|');
+    this.tokenizer.backUpBy(1);
+    return new TextState(this.tokenizer);
+  }
+
+  public terminate(): void {
+    this.tokenizer.storeToken(TokenType.PIPE, '|');
+  }
+}
+
+///////////////////
+
 // Collects plain text until a character for a different token is
 // encountered. Default state of FSM.
 class TextState extends BaseState implements State {
@@ -642,9 +730,15 @@ class TextState extends BaseState implements State {
       case SingleQuote: {
         return new QuoteState(this.tokenizer, ch);
       }
-      // case '{': {
-      //   return new BraceState(this.tokenizer, ch);
-      // }
+      case '{': {
+        return new BraceOpenState(this.tokenizer, ch);
+      }
+      case '}': {
+        return new BraceCloseState(this.tokenizer, ch);
+      }
+      case '|': {
+        return new PipeState(this.tokenizer, ch);
+      }
       // case '[': {
       //   return new BracketState(this.tokenizer, ch);
       // }
