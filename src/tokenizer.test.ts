@@ -472,7 +472,7 @@ describe('templates', () => {
 
     expect(tokens.length).toBe(3);
     expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
-    expect(verifyToken(tokens[0], TokenType.TEXT, 'name')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, 'name')).toBeTruthy();
     expect(verifyToken(tokens[2], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
   });
 
@@ -533,7 +533,7 @@ describe('templates', () => {
 
     expect(tokens.length).toBe(2);
     expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
-    expect(verifyToken(tokens[0], TokenType.TEXT, 'name}')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEXT, 'name}')).toBeTruthy();
   });
 });
 
@@ -544,7 +544,7 @@ describe('tables', () => {
     const tokens: Token[] = tokenize('{||}');
 
     expect(tokens.length).toBe(2);
-    expect(verifyToken(tokens[0], TokenType.TABLE_END, '{|')).toBeTruthy();
+    expect(verifyToken(tokens[0], TokenType.TABLE_BEGIN, '{|')).toBeTruthy();
     expect(verifyToken(tokens[1], TokenType.TABLE_END, '|}')).toBeTruthy();
   });
 });

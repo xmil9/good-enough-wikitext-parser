@@ -34,9 +34,9 @@ const CommentBeginMarker = '<!--';
 const CommentEndMarker = '-->';
 const HorzDividerMarker = '----';
 const TemplateBeginMarker = '{{';
-const TemplateEndMarker = '{{';
+const TemplateEndMarker = '}}';
 const TableBeginMarker = '{|';
-const TableEndMarker = '{|';
+const TableEndMarker = '|}';
 
 ///////////////////
 
