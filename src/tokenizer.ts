@@ -7,11 +7,6 @@ import { Char, Wikitext } from './types';
 
 ///////////////////
 
-// Constant for single quote characters.
-// Avoids having to sprinkle the eslint disabling statement in multiple
-// places.
-const SingleQuote: Char = "'"; // eslint-disable-line quotes
-
 // Counts the number of occurrences of a given substring in a given text.
 function countSubstring(text: string, substr: string): number {
   if (substr.length === 0) {
@@ -28,8 +23,20 @@ function countSubstring(text: string, substr: string): number {
 
 ///////////////////
 
+const EOLChar = '\n';
+const SingleQuoteChar = "'"; // eslint-disable-line quotes
+const BraceOpenChar = '{';
+const BraceCloseChar = '}';
+const AngleOpenChar = '<';
+const AngleCloseChar = '>';
+const PipeChar = '|';
+const DashChar = '-';
+const SlackChar = '/';
+const ExclamationChar = '!';
+
 const BoldMarker = "'''"; // eslint-disable-line quotes
-const ItalixMarker = "''"; // eslint-disable-line quotes
+const ItalicMarker = "''"; // eslint-disable-line quotes
+const EndTagBeginMarker = '</';
 const CommentBeginMarker = '<!--';
 const CommentEndMarker = '-->';
 const HorzDividerMarker = '----';
@@ -206,7 +213,7 @@ class QuoteState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    if (ch !== SingleQuote) {
+    if (ch !== SingleQuoteChar) {
       this.storeTokens();
       this.tokenizer.backUpBy(1);
       return new TextState(this.tokenizer);
@@ -239,14 +246,14 @@ class QuoteState extends BaseState implements State {
     const isItalic = numQuotes == ItalicQuotes || numQuotes >= BoldItalicQuotes;
 
     if (numPlainTextQuotes > 0) {
-      const text = SingleQuote.repeat(numPlainTextQuotes);
+      const text = SingleQuoteChar.repeat(numPlainTextQuotes);
       this.tokenizer.storeToken(TokenType.TEXT, text);
     }
     if (isBold) {
       this.tokenizer.storeToken(TokenType.BOLD, BoldMarker);
     }
     if (isItalic) {
-      this.tokenizer.storeToken(TokenType.ITALIC, ItalixMarker);
+      this.tokenizer.storeToken(TokenType.ITALIC, ItalicMarker);
     }
   }
 }
@@ -279,7 +286,7 @@ class HtmlStartTagState extends BaseState implements State {
 
   private storeTokens(): void {
     if (isHtmlOrExtensionTag(this.tagName())) {
-      this.tokenizer.storeToken(TokenType.OPEN_START_TAG, '<');
+      this.tokenizer.storeToken(TokenType.OPEN_START_TAG, AngleOpenChar);
       this.tokenizer.storeToken(
         TokenType.TAG_NAME,
         normalizeTagName(this.tagName())
@@ -324,7 +331,7 @@ class HtmlEndTagState extends BaseState implements State {
 
   private storeTokens(): void {
     if (isHtmlOrExtensionTag(this.tagName())) {
-      this.tokenizer.storeToken(TokenType.OPEN_END_TAG, '</');
+      this.tokenizer.storeToken(TokenType.OPEN_END_TAG, EndTagBeginMarker);
       this.tokenizer.storeToken(
         TokenType.TAG_NAME,
         normalizeTagName(this.tagName())
@@ -388,11 +395,11 @@ class OpenAngleBracketState extends BaseState implements State {
 
   public next(ch: Char): State {
     switch (ch) {
-      case '/': {
+      case SlackChar: {
         this.value += ch;
         return new HtmlEndTagState(this.tokenizer, this.value);
       }
-      case '!': {
+      case ExclamationChar: {
         this.value += ch;
         return new CommentStartState(this.tokenizer, this.value);
       }
@@ -454,12 +461,12 @@ class HorzDividerState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    if (ch === '>') {
+    if (ch === AngleCloseChar) {
       // Ambiguous situation. See comment for COMMENT_END_OR_HORZ_DIV token.
       this.value += ch;
       this.tokenizer.storeToken(TokenType.COMMENT_END_OR_HORZ_DIV, this.value);
       return new TextState(this.tokenizer);
-    } else if (ch !== '-') {
+    } else if (ch !== DashChar) {
       this.tokenizer.storeToken(TokenType.HORZ_DIVIDER, this.value);
       return new TextState(this.tokenizer, ch);
     }
@@ -498,7 +505,7 @@ class DashState extends BaseState implements State {
       return new TextState(this.tokenizer);
     } else if (this._atStartOfLine && newValue === HorzDividerMarker) {
       return new HorzDividerState(this.tokenizer, newValue);
-    } else if (ch === '-') {
+    } else if (ch === DashChar) {
       this.value = newValue;
       return this;
     }
@@ -599,13 +606,13 @@ class PipeState extends BaseState implements State {
     }
 
     // Individual pipe.
-    this.tokenizer.storeToken(TokenType.PIPE, '|');
+    this.tokenizer.storeToken(TokenType.PIPE, PipeChar);
     this.tokenizer.backUpBy(1);
     return new TextState(this.tokenizer);
   }
 
   public terminate(): void {
-    this.tokenizer.storeToken(TokenType.PIPE, '|');
+    this.tokenizer.storeToken(TokenType.PIPE, PipeChar);
   }
 }
 
@@ -640,25 +647,25 @@ class TextState extends BaseState implements State {
     const isBOL = this.isBeginningOfLine();
 
     switch (ch) {
-      case SingleQuote: {
+      case SingleQuoteChar: {
         return new QuoteState(this.tokenizer, ch);
       }
-      case '{': {
+      case BraceOpenChar: {
         return new BraceOpenState(this.tokenizer, ch);
       }
-      case '}': {
+      case BraceCloseChar: {
         return new BraceCloseState(this.tokenizer, ch);
       }
-      case '|': {
+      case PipeChar: {
         return new PipeState(this.tokenizer, ch);
       }
       // case '[': {
       //   return new BracketState(this.tokenizer, ch);
       // }
-      case '<': {
+      case AngleOpenChar: {
         return new OpenAngleBracketState(this.tokenizer, ch);
       }
-      case '>': {
+      case AngleCloseChar: {
         return new CloseAngleBracketState(this.tokenizer, ch);
       }
       // case '~': {
@@ -689,7 +696,7 @@ class TextState extends BaseState implements State {
       //     return new ColonState(this.tokenizer, ch);
       //   }
       // }
-      case '-': {
+      case DashChar: {
         return new DashState(this.tokenizer, ch, isBOL);
       }
       // case '_': {
@@ -703,7 +710,7 @@ class TextState extends BaseState implements State {
       //     return new SpaceState(this.tokenizer, ch);
       //   }
       // }
-      // case '/': {
+      // case SlackChar: {
       //   return new SlashState(this.tokenizer, ch);
       // }
     }
@@ -720,7 +727,7 @@ class TextState extends BaseState implements State {
 
   private isBeginningOfLine(): boolean {
     const lastCh = this.lastChar();
-    return lastCh === '\n' || lastCh === '';
+    return lastCh === EOLChar || lastCh === '';
   }
 
   // Returns the last character of the read text (even across a previous tokens).
@@ -825,12 +832,12 @@ class Tokenizer {
 
   // Increases the line count according to the given text that was consumed.
   private incLineCount(consumedText: string): void {
-    this._lineNum += countSubstring(consumedText, '\n');
+    this._lineNum += countSubstring(consumedText, EOLChar);
   }
 
   // Decreases the line count according to the given text that was un-consumed.
   private decLineCount(unconsumedText: string): void {
-    this._lineNum -= countSubstring(unconsumedText, '\n');
+    this._lineNum -= countSubstring(unconsumedText, EOLChar);
   }
 
   // Attempts to combine a new token with the last token.
