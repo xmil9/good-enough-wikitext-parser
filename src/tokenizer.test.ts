@@ -1,4 +1,9 @@
-import { Token, tokenize, TokenType } from './tokenizer';
+//
+// Tests for Tokenizer.
+//
+
+import { Token, TokenType } from './token';
+import { tokenize } from './tokenizer';
 
 /* eslint-disable quotes */
 
@@ -385,20 +390,17 @@ describe('comments', () => {
     expect(verifyToken(tokens[2], TokenType.COMMENT_END, '-->')).toBeTruthy();
   });
 
-  test('multi line comment where final line starts with a horizontal divider token - LIMITATION', () => {
-    // This is incorrect! The correct token sequence should be:
-    // COMMENT_BEGIN TEXT COMMENT_END
-    // But without making the tokenizer context aware this is not possible.
-
+  test('multi line comment where final line starts with a horizontal divider token', () => {
     const tokens: Token[] = tokenize('<!-- line one\n---->');
 
-    expect(tokens.length).toBe(4);
+    expect(tokens.length).toBe(3);
     expect(
       verifyToken(tokens[0], TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
     expect(verifyToken(tokens[1], TokenType.TEXT, ' line one\n')).toBeTruthy();
-    expect(verifyToken(tokens[2], TokenType.HORZ_DIVIDER, '----')).toBeTruthy();
-    expect(verifyToken(tokens[3], TokenType.TEXT, '>')).toBeTruthy();
+    expect(
+      verifyToken(tokens[2], TokenType.COMMENT_END_OR_HORZ_DIV, '---->')
+    ).toBeTruthy();
   });
 
   test('comment with invalid start marker', () => {
@@ -439,14 +441,14 @@ describe('horizontal dividers', () => {
     ).toBeTruthy();
   });
 
-  test.only('horizontal divider marker that is not at the beginning of a line', () => {
+  test('horizontal divider marker that is not at the beginning of a line', () => {
     const tokens: Token[] = tokenize('a----');
 
     expect(tokens.length).toBe(1);
     expect(verifyToken(tokens[0], TokenType.TEXT, 'a----')).toBeTruthy();
   });
 
-  test.only('horizontal divider followed by text', () => {
+  test('horizontal divider followed by text', () => {
     const tokens: Token[] = tokenize('----text');
 
     expect(tokens.length).toBe(2);
@@ -454,7 +456,7 @@ describe('horizontal dividers', () => {
     expect(verifyToken(tokens[1], TokenType.TEXT, 'text')).toBeTruthy();
   });
 
-  test.only('invalid horizontal divider', () => {
+  test('invalid horizontal divider', () => {
     const tokens: Token[] = tokenize('---');
 
     expect(tokens.length).toBe(1);

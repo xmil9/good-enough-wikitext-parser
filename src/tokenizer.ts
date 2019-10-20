@@ -2,6 +2,7 @@
 // Tokenization of wikitext.
 //
 
+import { Token, TokenType } from './token';
 import { Char, Wikitext } from './types';
 
 ///////////////////
@@ -24,6 +25,18 @@ function countSubstring(text: string, substr: string): number {
   }
   return count;
 }
+
+///////////////////
+
+const BoldMarker = "'''"; // eslint-disable-line quotes
+const ItalixMarker = "''"; // eslint-disable-line quotes
+const CommentBeginMarker = '<!--';
+const CommentEndMarker = '-->';
+const HorzDividerMarker = '----';
+const TemplateBeginMarker = '{{';
+const TemplateEndMarker = '{{';
+const TableBeginMarker = '{|';
+const TableEndMarker = '{|';
 
 ///////////////////
 
@@ -155,96 +168,6 @@ function isExtensionTagPrefix(s: string): boolean {
 
 function isHtmlOrExtensionTagPrefix(s: string): boolean {
   return isHtmlTagPrefix(s) || isExtensionTagPrefix(s);
-}
-
-///////////////////
-
-const BoldMarker = "'''"; // eslint-disable-line quotes
-const ItalixMarker = "''"; // eslint-disable-line quotes
-const CommentBeginMarker = '<!--';
-const CommentEndMarker = '-->';
-const HorzDividerMarker = '----';
-const TemplateBeginMarker = '{{';
-const TemplateEndMarker = '{{';
-const TableBeginMarker = '{|';
-const TableEndMarker = '{|';
-
-export enum TokenType {
-  TEXT = 'text',
-  ITALIC = 'italic_toggle', // ''
-  BOLD = 'bold_toggle', // '''
-  NEW_PARAGRAPH = 'new_paragraph', // blank line
-  OPEN_START_TAG = 'open_start_tag', // <
-  OPEN_END_TAG = 'open_end_tag', // </
-  CLOSE_TAG = 'close_tag', // >
-  CLOSE_AND_END_TAG = 'close_and_end_tag', // />
-  TAG_NAME = 'tag_name', // name of html or wikitext extension tag
-  SIGNATURE = 'signature', // ~~~
-  SIGNATURE_DATETIME = 'signature_date_time', // ~~~~
-  DATE_TIME = 'date_time', // ~~~~~
-  TEMPLATE_BEGIN = 'template_begin', // {{
-  TEMPLATE_END = 'template_end', // }}
-  COMMENT_BEGIN = 'comment_begin', // <!--
-  COMMENT_END = 'comment_end', // -->
-  HEADING_BEGIN = 'heading_begin', // = (up to 6)
-  HEADING_END = 'heading_end', // =
-  // *'s at start of line or after previous # (count determines indent)
-  UNORDERED_LIST_ENTRY = 'unordered_list_entry',
-  // #'s at start of line or atfer previous * (count determines indent)
-  NUMBERED_LIST_ENTRY = 'numbered_list_entry',
-  DEFINED_PHRASE = 'defined_phrase', // ; at start of line or after previous * or #
-  DEFINITION = 'definition', // : after defined phrase (multiple definitions possible)
-  INDENT = 'indent', // : at start of line (count determines indent)
-  HORZ_DIVIDER = 'horz_divider', // ----
-  LINK_BEGIN = 'link_begin', // [[
-  LINK_END = 'link_end', // ]]
-  EXT_LINK_BEGIN = 'ext_link_begin', // [
-  EXT_LINK_END = 'ext_link_end', // ]
-  PIPE = 'pipe', // |
-  SPACE = 'space', // ' '
-  COLON = 'colon', // links with colons are category links
-  URL = 'url', // http(s)://
-  EMAIL = 'email', // mailto:
-  REDIRECT = 'redirect', // #REDIRECT
-  FORCETOC = 'forcetoc', // __FORCETOC__
-  TOC = 'toc', // __TOC__
-  NOTOC = 'notoc', // __NOTOC__
-  NBSP = 'nbsp', // &nbsp; - non-breaking space
-  // &<char-ref>; with <char-ref> a multi-letter reference for a special char,
-  // e.g. &quot; for "
-  SPECIAL_CHAR = 'special_char',
-  UNICODE_CHAR = 'unicode_char', // &#<code>
-  TABLE_BEGIN = 'table_begin', // {|
-  TABLE_END = 'table_end' // |}
-}
-
-export class Token {
-  private readonly _type: TokenType;
-  private readonly _value: string;
-  private readonly _lineNum: number;
-
-  constructor(type: TokenType, value: string, lineNum: number) {
-    this._type = type;
-    this._value = value;
-    this._lineNum = lineNum;
-  }
-
-  public get type(): TokenType {
-    return this._type;
-  }
-
-  public get value(): string {
-    return this._value;
-  }
-
-  public get lineNumber(): number {
-    return this._lineNum;
-  }
-
-  // Returns string indicating the location of the token in the source file.
-  public location(): string {
-    return `Line: ${this._lineNum}`;
-  }
 }
 
 ///////////////////
@@ -531,8 +454,13 @@ class HorzDividerState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    if (ch !== '-') {
-      this.storeTokens();
+    if (ch === '>') {
+      // Ambiguous situation. See comment for COMMENT_END_OR_HORZ_DIV token.
+      this.value += ch;
+      this.tokenizer.storeToken(TokenType.COMMENT_END_OR_HORZ_DIV, this.value);
+      return new TextState(this.tokenizer);
+    } else if (ch !== '-') {
+      this.tokenizer.storeToken(TokenType.HORZ_DIVIDER, this.value);
       return new TextState(this.tokenizer, ch);
     }
 
@@ -541,10 +469,6 @@ class HorzDividerState extends BaseState implements State {
   }
 
   public terminate(): void {
-    this.storeTokens();
-  }
-
-  private storeTokens(): void {
     this.tokenizer.storeToken(TokenType.HORZ_DIVIDER, this.value);
   }
 }
@@ -567,17 +491,6 @@ class DashState extends BaseState implements State {
 
   public next(ch: Char): State {
     const newValue = this.value + ch;
-
-    // Limitation:
-    //   <!-- comment
-    //   ---->
-    // Will result in:
-    //   COMMENT_BEGIN TEXT HORZ_DIVIDER TEXT
-    // Instead of:
-    //   COMMENT_BEGIN TEXT COMMENT_END
-    // Solutions:
-    // - Maintain context in tokenizer.
-    // - Handle in parser.
 
     if (newValue.endsWith(CommentEndMarker)) {
       this.value = newValue;
@@ -820,6 +733,9 @@ class TextState extends BaseState implements State {
 ///////////////////
 
 // FSM to tokenize wikitext.
+// The tokenizer is context unaware and will create tokens for any special symbol,
+// e.g. '|' or '!', no matter where it occurrs. The parser is responsible for
+// processing these symbol tokens according to the context they appear in.
 class Tokenizer {
   private readonly _text: Wikitext;
   private _pos = 0;
