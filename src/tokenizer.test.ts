@@ -506,6 +506,33 @@ describe('templates', () => {
     //expect(verifyToken(tokens[3], TokenType.TEXT, 'name')).toBeTruthy();
     //expect(verifyToken(tokens[4], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
   });
+
+  test('nested template', () => {
+    // This might not be valid wikitext. The parser should detect it.
+    const tokens: Token[] = tokenize('{{{{}}}}');
+
+    expect(tokens.length).toBe(4);
+    expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
+    expect(verifyToken(tokens[2], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
+    expect(verifyToken(tokens[3], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
+  });
+
+  test('invalid template start', () => {
+    const tokens: Token[] = tokenize('{name}}');
+
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens[0], TokenType.TEXT, '{name')).toBeTruthy();
+    expect(verifyToken(tokens[1], TokenType.TEMPLATE_END, '}}')).toBeTruthy();
+  });
+
+  test('invalid template end', () => {
+    const tokens: Token[] = tokenize('{{name}');
+
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens[0], TokenType.TEMPLATE_BEGIN, '{{')).toBeTruthy();
+    expect(verifyToken(tokens[0], TokenType.TEXT, 'name}')).toBeTruthy();
+  });
 });
 
 ///////////////////
