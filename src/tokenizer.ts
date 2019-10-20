@@ -454,82 +454,56 @@ class CloseAngleBracketState extends BaseState implements State {
 
 ///////////////////
 
-// Entered when a '----' is encountered. Will continue to read trailing
-// dashes.
-class HorzDividerState extends BaseState implements State {
+// Entered when a '-' is encountered. A pass-through state for tokens
+// initiated with a '-'.
+class DashState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
     super(tokenizer, initialValue);
   }
 
   public next(ch: Char): State {
-    if (ch === AngleCloseChar) {
-      // Ambiguous situation. See comment for COMMENT_END_OR_HORZ_DIV token.
-      this.value += ch;
-      this.tokenizer.storeToken(TokenType.COMMENT_END_OR_HORZ_DIV, this.value);
-      return new TextState(this.tokenizer);
-    } else if (ch !== DashChar) {
-      this.tokenizer.storeToken(TokenType.HORZ_DIVIDER, this.value);
-      return new TextState(this.tokenizer, ch);
-    }
-
-    this.value += ch;
-    return this;
-  }
-
-  public terminate(): void {
-    this.tokenizer.storeToken(TokenType.HORZ_DIVIDER, this.value);
-  }
-}
-
-///////////////////
-
-// Entered when a '-' is encountered. A pass-through state for tokens
-// initiated with a '-'.
-class DashState extends BaseState implements State {
-  private readonly _atStartOfLine: boolean;
-
-  constructor(
-    tokenizer: Tokenizer,
-    initialValue: string,
-    atStartOfLine: boolean
-  ) {
-    super(tokenizer, initialValue);
-    this._atStartOfLine = atStartOfLine;
-  }
-
-  public next(ch: Char): State {
     const newValue = this.value + ch;
 
-    if (newValue.endsWith(CommentEndMarker)) {
+    if (ch === AngleCloseChar) {
       this.value = newValue;
-      this.storeCommentEndTokens();
+      this.storeClosingAngle();
       return new TextState(this.tokenizer);
-    } else if (this._atStartOfLine && newValue === HorzDividerMarker) {
-      return new HorzDividerState(this.tokenizer, newValue);
     } else if (ch === DashChar) {
       this.value = newValue;
       return this;
     }
 
-    // Not matching anything. Revert back to text.
-    return new TextState(this.tokenizer, newValue);
+    // Store the collected dashes.
+    this.storeDashes();
+    this.tokenizer.backUpBy(1);
+    return new TextState(this.tokenizer);
   }
 
   public terminate(): void {
-    // Store incomplete marker as text.
-    const textState = new TextState(this.tokenizer, this.value);
-    textState.terminate();
+    this.storeDashes();
   }
 
-  private storeCommentEndTokens(): void {
-    const leadingDashes = this.value.substring(
-      0,
-      this.value.length - CommentEndMarker.length
-    );
-    if (leadingDashes) {
-      this.tokenizer.storeToken(TokenType.TEXT, leadingDashes);
+  private storeClosingAngle(): void {
+    if (this.value.endsWith(CommentEndMarker)) {
+      const leadingDashes = this.value.substring(
+        0,
+        this.value.length - CommentEndMarker.length
+      );
+      if (leadingDashes) {
+        this.tokenizer.storeToken(TokenType.DASHES, leadingDashes);
+      }
+      this.tokenizer.storeToken(TokenType.COMMENT_END, CommentEndMarker);
+    } else {
+      this.tokenizer.storeToken(
+        TokenType.DASHES,
+        this.value.substring(0, this.value.length - 1)
+      );
+      this.tokenizer.storeToken(TokenType.CLOSE_TAG, AngleCloseChar);
     }
-    this.tokenizer.storeToken(TokenType.COMMENT_END, CommentEndMarker);
+  }
+
+  private storeDashes(): void {
+    this.tokenizer.storeToken(TokenType.DASHES, this.value);
   }
 }
 
@@ -645,8 +619,6 @@ class TextState extends BaseState implements State {
   // Transitions to a new state based on a given character.
   // Returns the new state or 'undefined' for no transition.
   private transition(ch: Char): State {
-    const isBOL = this.isBeginningOfLine();
-
     switch (ch) {
       case SingleQuoteChar: {
         return new QuoteState(this.tokenizer, ch);
@@ -696,7 +668,7 @@ class TextState extends BaseState implements State {
         return this.processSingleCharacterToken(TokenType.COLON, ch);
       }
       case DashChar: {
-        return new DashState(this.tokenizer, ch, isBOL);
+        return new DashState(this.tokenizer, ch);
       }
       // case '_': {
       //   return new UnderscoreState(this.tokenizer, ch);

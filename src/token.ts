@@ -31,14 +31,14 @@ export enum TokenType {
   DEFINED_PHRASE = 'defined-phrase', // ; at start of line or after previous * or #
   DEFINITION = 'definition', // : after defined phrase (multiple definitions possible)
   INDENT = 'indent', // : at start of line (count determines indent)
-  HORZ_DIVIDER = 'horz-divider', // ----
   LINK_BEGIN = 'link-begin', // [[
   LINK_END = 'link-end', // ]]
   EXT_LINK_BEGIN = 'ext-link-begin', // [
   EXT_LINK_END = 'ext-link-end', // ]
   PIPE = 'pipe', // |
   SPACE = 'space', // ' '
-  COLON = 'colon', // links with colons are category links
+  COLON = 'colon', // :
+  DASHES = 'dashes', // one or more '-'
   URL = 'url', // http(s)://
   EMAIL = 'email', // mailto:
   REDIRECT = 'redirect', // #REDIRECT
@@ -51,17 +51,7 @@ export enum TokenType {
   SPECIAL_CHAR = 'special-char',
   UNICODE_CHAR = 'unicode-char', // &#<code>
   TABLE_BEGIN = 'table-begin', // {|
-  TABLE_END = 'table-end', // |}
-  // Special token for ambiguous situation:
-  // ---->
-  // Depending on the context this could be:
-  // 1) TEXT COMMENT_END
-  //    if a multi line comment context is open.
-  // 2) HORZ_DIVIDER TEXT
-  //    if a multi line comment context is not open.
-  // Solution:
-  // Generate special token and let parser decide based on context.
-  COMMENT_END_OR_HORZ_DIV = 'comment-end-or-horz-div'
+  TABLE_END = 'table-end' // |}
 }
 
 export class Token {

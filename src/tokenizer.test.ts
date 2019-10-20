@@ -455,12 +455,13 @@ describe('comments', () => {
       tokenize('<!----- comment -->')
     );
 
-    expect(tokens.length).toBe(3);
+    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '---')).toBeTruthy();
     expect(
-      verifyToken(tokens.next(), TokenType.TEXT, '--- comment ')
+      verifyToken(tokens.next(), TokenType.TEXT, ' comment ')
     ).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
@@ -474,12 +475,13 @@ describe('comments', () => {
       tokenize('<!------- comment -->')
     );
 
-    expect(tokens.length).toBe(3);
+    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '-----')).toBeTruthy();
     expect(
-      verifyToken(tokens.next(), TokenType.TEXT, '----- comment ')
+      verifyToken(tokens.next(), TokenType.TEXT, ' comment ')
     ).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
@@ -491,13 +493,14 @@ describe('comments', () => {
       tokenize('<!-- comment ----->')
     );
 
-    expect(tokens.length).toBe(3);
+    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
     expect(
-      verifyToken(tokens.next(), TokenType.TEXT, ' comment ---')
+      verifyToken(tokens.next(), TokenType.TEXT, ' comment ')
     ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '---')).toBeTruthy();
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
@@ -508,7 +511,7 @@ describe('comments', () => {
       tokenize('<!-- line one\n---->')
     );
 
-    expect(tokens.length).toBe(4);
+    expect(tokens.length).toBe(5);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
@@ -516,8 +519,9 @@ describe('comments', () => {
       verifyToken(tokens.next(), TokenType.TEXT, ' line one')
     ).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '--')).toBeTruthy();
     expect(
-      verifyToken(tokens.next(), TokenType.COMMENT_END_OR_HORZ_DIV, '---->')
+      verifyToken(tokens.next(), TokenType.COMMENT_END, '-->')
     ).toBeTruthy();
   });
 
@@ -540,13 +544,15 @@ describe('comments', () => {
       tokenize('<!-- comment ->')
     );
 
-    expect(tokens.length).toBe(2);
+    expect(tokens.length).toBe(4);
     expect(
       verifyToken(tokens.next(), TokenType.COMMENT_BEGIN, '<!--')
     ).toBeTruthy();
     expect(
-      verifyToken(tokens.next(), TokenType.TEXT, ' comment ->')
+      verifyToken(tokens.next(), TokenType.TEXT, ' comment ')
     ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '-')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.CLOSE_TAG, '>')).toBeTruthy();
   });
 });
 
@@ -557,9 +563,7 @@ describe('horizontal dividers', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('----'));
 
     expect(tokens.length).toBe(1);
-    expect(
-      verifyToken(tokens.next(), TokenType.HORZ_DIVIDER, '----')
-    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '----')).toBeTruthy();
   });
 
   test('horizontal divider with extra dashes', () => {
@@ -567,24 +571,23 @@ describe('horizontal dividers', () => {
 
     expect(tokens.length).toBe(1);
     expect(
-      verifyToken(tokens.next(), TokenType.HORZ_DIVIDER, '---------')
+      verifyToken(tokens.next(), TokenType.DASHES, '---------')
     ).toBeTruthy();
   });
 
   test('horizontal divider marker that is not at the beginning of a line', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('a----'));
 
-    expect(tokens.length).toBe(1);
-    expect(verifyToken(tokens.next(), TokenType.TEXT, 'a----')).toBeTruthy();
+    expect(tokens.length).toBe(2);
+    expect(verifyToken(tokens.next(), TokenType.TEXT, 'a')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '----')).toBeTruthy();
   });
 
   test('horizontal divider followed by text', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('----text'));
 
     expect(tokens.length).toBe(2);
-    expect(
-      verifyToken(tokens.next(), TokenType.HORZ_DIVIDER, '----')
-    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '----')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TEXT, 'text')).toBeTruthy();
   });
 
@@ -592,7 +595,7 @@ describe('horizontal dividers', () => {
     const tokens: TokenIterator = new TokenIterator(tokenize('---'));
 
     expect(tokens.length).toBe(1);
-    expect(verifyToken(tokens.next(), TokenType.TEXT, '---')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.DASHES, '---')).toBeTruthy();
   });
 });
 
