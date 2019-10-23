@@ -214,15 +214,18 @@ class QuoteState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    if (ch !== SingleQuoteChar) {
-      this.storeTokens();
-      this.tokenizer.backUpBy(1);
-      return new TextState(this.tokenizer);
+    switch (ch) {
+      case SingleQuoteChar: {
+        // Keep reading quotes.
+        this.value += ch;
+        return this;
+      }
+      default: {
+        this.storeTokens();
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
     }
-
-    // Keep reading quotes.
-    this.value += ch;
-    return this;
   }
 
   public terminate(): void {
@@ -404,17 +407,18 @@ class OpenAngleBracketState extends BaseState implements State {
         this.value += ch;
         return new CommentStartState(this.tokenizer, this.value);
       }
+      default: {
+        if (isHtmlOrExtensionTagPrefix(ch)) {
+          this.value += ch;
+          return new HtmlStartTagState(this.tokenizer, this.value);
+        } else {
+          // It's just plain text.
+          this.storeTokens();
+          this.tokenizer.backUpBy(1);
+          return new TextState(this.tokenizer);
+        }
+      }
     }
-
-    if (isHtmlOrExtensionTagPrefix(ch)) {
-      this.value += ch;
-      return new HtmlStartTagState(this.tokenizer, this.value);
-    }
-
-    // It's just plain text.
-    this.storeTokens();
-    this.tokenizer.backUpBy(1);
-    return new TextState(this.tokenizer);
   }
 
   public terminate(): void {
@@ -428,32 +432,6 @@ class OpenAngleBracketState extends BaseState implements State {
 
 ///////////////////
 
-// Entered when a '>' is encountered. Generates a close-tag token.
-class CloseAngleBracketState extends BaseState implements State {
-  constructor(tokenizer: Tokenizer, initialValue: string) {
-    super(tokenizer, initialValue);
-  }
-
-  public next(ch: Char): State {
-    this.storeTokens();
-    this.tokenizer.backUpBy(1);
-    return new TextState(this.tokenizer);
-  }
-
-  public terminate(): void {
-    this.storeTokens();
-  }
-
-  private storeTokens() {
-    // Whether this is a closing tag or a plain '>' depends on the context.
-    // Store a close-tag token and leave the context-based processing to the
-    // parser.
-    this.tokenizer.storeToken(TokenType.CLOSE_TAG, this.value);
-  }
-}
-
-///////////////////
-
 // Entered when a '-' is encountered. A pass-through state for tokens
 // initiated with a '-'.
 class DashState extends BaseState implements State {
@@ -462,21 +440,23 @@ class DashState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    const newValue = this.value + ch;
-
-    if (ch === AngleCloseChar) {
-      this.value = newValue;
-      this.storeClosingAngle();
-      return new TextState(this.tokenizer);
-    } else if (ch === DashChar) {
-      this.value = newValue;
-      return this;
+    switch (ch) {
+      case AngleCloseChar: {
+        this.value += ch;
+        this.storeClosingAngle();
+        return new TextState(this.tokenizer);
+      }
+      case DashChar: {
+        this.value += ch;
+        return this;
+      }
+      default: {
+        // Store the collected dashes.
+        this.storeDashes();
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
     }
-
-    // Store the collected dashes.
-    this.storeDashes();
-    this.tokenizer.backUpBy(1);
-    return new TextState(this.tokenizer);
   }
 
   public terminate(): void {
@@ -516,18 +496,21 @@ class BraceOpenState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    const newValue = this.value + ch;
-
-    if (newValue === TableBeginMarker) {
-      this.tokenizer.storeToken(TokenType.TABLE_BEGIN, newValue);
-      return new TextState(this.tokenizer);
-    } else if (newValue === TemplateBeginMarker) {
-      this.tokenizer.storeToken(TokenType.TEMPLATE_BEGIN, newValue);
-      return new TextState(this.tokenizer);
+    switch (ch) {
+      case PipeChar: {
+        this.tokenizer.storeToken(TokenType.TABLE_BEGIN, this.value + ch);
+        return new TextState(this.tokenizer);
+      }
+      case BraceOpenChar: {
+        this.tokenizer.storeToken(TokenType.TEMPLATE_BEGIN, this.value + ch);
+        return new TextState(this.tokenizer);
+      }
+      default: {
+        // Not matching anything. Revert back to text.
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer, this.value);
+      }
     }
-
-    // Not matching anything. Revert back to text.
-    return new TextState(this.tokenizer, newValue);
   }
 
   public terminate(): void {
@@ -546,15 +529,17 @@ class BraceCloseState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    const newValue = this.value + ch;
-
-    if (newValue === TemplateEndMarker) {
-      this.tokenizer.storeToken(TokenType.TEMPLATE_END, newValue);
-      return new TextState(this.tokenizer);
+    switch (ch) {
+      case BraceCloseChar: {
+        this.tokenizer.storeToken(TokenType.TEMPLATE_END, this.value + ch);
+        return new TextState(this.tokenizer);
+      }
+      default: {
+        // Not matching anything. Revert back to text.
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer, this.value);
+      }
     }
-
-    // Not matching anything. Revert back to text.
-    return new TextState(this.tokenizer, newValue);
   }
 
   public terminate(): void {
@@ -573,17 +558,18 @@ class PipeState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    const newValue = this.value + ch;
-
-    if (newValue === TableEndMarker) {
-      this.tokenizer.storeToken(TokenType.TABLE_END, newValue);
-      return new TextState(this.tokenizer);
+    switch (ch) {
+      case BraceCloseChar: {
+        this.tokenizer.storeToken(TokenType.TABLE_END, this.value + ch);
+        return new TextState(this.tokenizer);
+      }
+      default: {
+        // Individual pipe.
+        this.tokenizer.storeToken(TokenType.PIPE, PipeChar);
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
     }
-
-    // Individual pipe.
-    this.tokenizer.storeToken(TokenType.PIPE, PipeChar);
-    this.tokenizer.backUpBy(1);
-    return new TextState(this.tokenizer);
   }
 
   public terminate(): void {
@@ -639,7 +625,10 @@ class TextState extends BaseState implements State {
         return new OpenAngleBracketState(this.tokenizer, ch);
       }
       case AngleCloseChar: {
-        return new CloseAngleBracketState(this.tokenizer, ch);
+        // Whether this is a closing tag or a plain '>' depends on the context.
+        // Store a close-tag token and leave the context-based processing to the
+        // parser.
+        return this.processSingleCharacterToken(TokenType.CLOSE_TAG, ch);
       }
       // case '~': {
       //   return new TildeState(this.tokenizer, ch);
@@ -687,10 +676,11 @@ class TextState extends BaseState implements State {
       case EOLChar: {
         return this.processSingleCharacterToken(TokenType.EOL, ch);
       }
+      default: {
+        // No transition.
+        return undefined;
+      }
     }
-
-    // No transition.
-    return undefined;
   }
 
   private processSingleCharacterToken(type: TokenType, ch: Char): State {
