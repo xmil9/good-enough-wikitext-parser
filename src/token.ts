@@ -36,6 +36,7 @@ export enum TokenType {
   EXT_LINK_BEGIN = 'ext-link-begin', // [
   EXT_LINK_END = 'ext-link-end', // ]
   PIPE = 'pipe', // |
+  EXCLAMATION_MARK = 'exclamation-mark', // |
   SPACE = 'space', // ' '
   COLON = 'colon', // :
   DASHES = 'dashes', // one or more '-'
@@ -51,7 +52,9 @@ export enum TokenType {
   SPECIAL_CHAR = 'special-char',
   UNICODE_CHAR = 'unicode-char', // &#<code>
   TABLE_BEGIN = 'table-begin', // {|
-  TABLE_END = 'table-end' // |}
+  TABLE_END = 'table-end', // |}
+  TABLE_CAPTION = 'table-caption', // |+
+  TABLE_ROW = 'table-row' // |-
 }
 
 export class Token {

@@ -34,6 +34,7 @@ const DashChar = '-';
 const SlashChar = '/';
 const ExclamationChar = '!';
 const ColonChar = ':';
+const PlusChar = '+';
 
 const BoldMarker = "'''"; // eslint-disable-line quotes
 const ItalicMarker = "''"; // eslint-disable-line quotes
@@ -563,6 +564,14 @@ class PipeState extends BaseState implements State {
         this.tokenizer.storeToken(TokenType.TABLE_END, this.value + ch);
         return new TextState(this.tokenizer);
       }
+      case PlusChar: {
+        this.tokenizer.storeToken(TokenType.TABLE_CAPTION, this.value + ch);
+        return new TextState(this.tokenizer);
+      }
+      case DashChar: {
+        this.tokenizer.storeToken(TokenType.TABLE_ROW, this.value + ch);
+        return new TextState(this.tokenizer);
+      }
       default: {
         // Individual pipe.
         this.tokenizer.storeToken(TokenType.PIPE, PipeChar);
@@ -617,6 +626,9 @@ class TextState extends BaseState implements State {
       }
       case PipeChar: {
         return new PipeState(this.tokenizer, ch);
+      }
+      case ExclamationChar: {
+        return this.processSingleCharacterToken(TokenType.EXCLAMATION_MARK, ch);
       }
       // case '[': {
       //   return new BracketState(this.tokenizer, ch);

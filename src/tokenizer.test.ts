@@ -705,11 +705,122 @@ describe('templates', () => {
 
 describe('tables', () => {
   test('empty table', () => {
-    const tokens: TokenIterator = new TokenIterator(tokenize('{||}'));
+    const tokens: TokenIterator = new TokenIterator(tokenize('{|\n|}'));
 
     expect(
       verifyToken(tokens.next(), TokenType.TABLE_BEGIN, '{|')
     ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_END, '|}')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
+  });
+
+  test('table with 1 cell', () => {
+    const tokens: TokenIterator = new TokenIterator(tokenize('{|\n|a\n|}'));
+
+    expect(
+      verifyToken(tokens.next(), TokenType.TABLE_BEGIN, '{|')
+    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TEXT, 'a')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_END, '|}')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
+  });
+
+  test('table with 1 row and 1 cell', () => {
+    const tokens: TokenIterator = new TokenIterator(
+      tokenize('{|\n|-\n| a\n|}')
+    );
+
+    expect(
+      verifyToken(tokens.next(), TokenType.TABLE_BEGIN, '{|')
+    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_ROW, '|-')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TEXT, ' a')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_END, '|}')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
+  });
+
+  test('table with 1 row and 2 cells', () => {
+    const tokens: TokenIterator = new TokenIterator(
+      tokenize('{|\n|-\n| a\n| b\n|}')
+    );
+
+    expect(
+      verifyToken(tokens.next(), TokenType.TABLE_BEGIN, '{|')
+    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_ROW, '|-')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TEXT, ' a')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TEXT, ' b')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_END, '|}')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
+  });
+
+  test('table with 2 rows and 1 cell', () => {
+    const tokens: TokenIterator = new TokenIterator(
+      tokenize('{|\n|-\n| a\n|-\n| b\n|}')
+    );
+
+    expect(
+      verifyToken(tokens.next(), TokenType.TABLE_BEGIN, '{|')
+    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_ROW, '|-')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TEXT, ' a')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_ROW, '|-')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TEXT, ' b')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_END, '|}')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
+  });
+
+  test('degenerate table with 1 row and no cell', () => {
+    const tokens: TokenIterator = new TokenIterator(tokenize('{|\n|-\n|}'));
+
+    expect(
+      verifyToken(tokens.next(), TokenType.TABLE_BEGIN, '{|')
+    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_ROW, '|-')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TABLE_END, '|}')).toBeTruthy();
+    expect(tokens.next()).toBeUndefined();
+  });
+
+  test('table with 1 cell and caption', () => {
+    const tokens: TokenIterator = new TokenIterator(
+      tokenize('{|\n|+caption\n|a\n|}')
+    );
+
+    expect(
+      verifyToken(tokens.next(), TokenType.TABLE_BEGIN, '{|')
+    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(
+      verifyToken(tokens.next(), TokenType.TABLE_CAPTION, '|+')
+    ).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TEXT, 'caption')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.PIPE, '|')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.TEXT, 'a')).toBeTruthy();
+    expect(verifyToken(tokens.next(), TokenType.EOL, '\n')).toBeTruthy();
     expect(verifyToken(tokens.next(), TokenType.TABLE_END, '|}')).toBeTruthy();
     expect(tokens.next()).toBeUndefined();
   });
