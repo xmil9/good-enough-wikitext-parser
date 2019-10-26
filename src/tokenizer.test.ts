@@ -27,6 +27,10 @@ const DefaultTokenValues: Map<TokenType, string> = new Map([
   [TokenType.COMMENT_END, '-->'],
   [TokenType.TEMPLATE_BEGIN, '{{'],
   [TokenType.TEMPLATE_END, '}}'],
+  [TokenType.LINK_BEGIN, '[['],
+  [TokenType.LINK_END, ']]'],
+  [TokenType.EXT_LINK_BEGIN, '['],
+  [TokenType.EXT_LINK_END, ']'],
   [TokenType.PIPE, '|'],
   [TokenType.COLON, ':'],
   [TokenType.TABLE_BEGIN, '{|'],
@@ -258,8 +262,8 @@ describe('quotes', () => {
 
 ///////////////////
 
-describe('Html tags', () => {
-  test('HTML start tag', () => {
+describe('html tags', () => {
+  test('html start tag', () => {
     const tokens = tokenize('<code>');
 
     expect(
@@ -356,7 +360,7 @@ describe('Html tags', () => {
     ).toBeTruthy();
   });
 
-  test('HTML end tag', () => {
+  test('html end tag', () => {
     const tokens = tokenize('</code>');
 
     expect(
@@ -903,6 +907,174 @@ describe('tables', () => {
         et(TokenType.TEXT, 'b2'),
         et(TokenType.EOL),
         et(TokenType.TABLE_END)
+      ])
+    ).toBeTruthy();
+  });
+});
+
+///////////////////
+
+describe('wiki links', () => {
+  test('empty link', () => {
+    const tokens = tokenize('[[]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('basic link', () => {
+    const tokens = tokenize('[[link]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'link'),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('link with namespace', () => {
+    const tokens = tokenize('[[ns:link]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'ns'),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, 'link'),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('renamed link', () => {
+    const tokens = tokenize('[[link|displayed name]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'link'),
+        et(TokenType.PIPE),
+        et(TokenType.TEXT, 'displayed name'),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('auto renamed link for parenthesis', () => {
+    const tokens = tokenize('[[link (hidden)|]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'link (hidden)'),
+        et(TokenType.PIPE),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('auto renamed link for comma', () => {
+    const tokens = tokenize('[[link, hidden|]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'link, hidden'),
+        et(TokenType.PIPE),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('auto renamed link for namespace', () => {
+    const tokens = tokenize('[[ns:link|]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'ns'),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, 'link'),
+        et(TokenType.PIPE),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('blended link', () => {
+    const tokens = tokenize('[[example]]s');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'example'),
+        et(TokenType.LINK_END),
+        et(TokenType.TEXT, 's')
+      ])
+    ).toBeTruthy();
+  });
+
+  test('link to page section', () => {
+    const tokens = tokenize('[[page#section]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'page'),
+        et(TokenType.HASHES, '#'),
+        et(TokenType.TEXT, 'section'),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('link to section on same page', () => {
+    const tokens = tokenize('[[#section]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.HASHES, '#'),
+        et(TokenType.TEXT, 'section'),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('link to category', () => {
+    const tokens = tokenize('[[:Category:Character Sets]]');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, 'Category'),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, 'Character Sets'),
+        et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('link with namespace, section, and renaming', () => {
+    const tokens = tokenize('[[Wikipedia:Manual of Style#Italics|Italics]]');
+
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.LINK_BEGIN),
+        et(TokenType.TEXT, 'Wikipedia'),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, 'Manual of Style'),
+        et(TokenType.HASHES, '#'),
+        et(TokenType.TEXT, 'Italics'),
+        et(TokenType.PIPE),
+        et(TokenType.TEXT, 'Italics'),
+        et(TokenType.LINK_END)
       ])
     ).toBeTruthy();
   });

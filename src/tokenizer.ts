@@ -29,8 +29,11 @@ const BraceOpenChar = '{';
 const BraceCloseChar = '}';
 const AngleOpenChar = '<';
 const AngleCloseChar = '>';
+const BracketOpenChar = '[';
+const BracketCloseChar = ']';
 const PipeChar = '|';
 const DashChar = '-';
+const HashChar = '#';
 const SlashChar = '/';
 const ExclamationChar = '!';
 const ColonChar = ':';
@@ -393,7 +396,7 @@ class CommentStartState extends BaseState implements State {
 
 // Entered when a '<' is encountered. A pass-through state for tokens
 // initiated with a '<'.
-class OpenAngleBracketState extends BaseState implements State {
+class AngleBracketOpenState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
     super(tokenizer, initialValue);
   }
@@ -433,8 +436,7 @@ class OpenAngleBracketState extends BaseState implements State {
 
 ///////////////////
 
-// Entered when a '-' is encountered. A pass-through state for tokens
-// initiated with a '-'.
+// Entered when a '-' is encountered.
 class DashState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
     super(tokenizer, initialValue);
@@ -485,6 +487,39 @@ class DashState extends BaseState implements State {
 
   private storeDashes(): void {
     this.tokenizer.storeToken(TokenType.DASHES, this.value);
+  }
+}
+
+///////////////////
+
+// Entered when a '#' is encountered.
+class HashState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    switch (ch) {
+      case HashChar: {
+        // Collect hashes.
+        this.value += ch;
+        return this;
+      }
+      default: {
+        // Store the collected hashes.
+        this.storeHashes();
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
+    }
+  }
+
+  public terminate(): void {
+    this.storeHashes();
+  }
+
+  private storeHashes(): void {
+    this.tokenizer.storeToken(TokenType.HASHES, this.value);
   }
 }
 
@@ -547,6 +582,60 @@ class BraceCloseState extends BaseState implements State {
     // Store incomplete marker as text.
     const textState = new TextState(this.tokenizer, this.value);
     textState.terminate();
+  }
+}
+
+///////////////////
+
+// Entered when a '[' is encountered.
+class SquareBracketOpenState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    switch (ch) {
+      case BracketOpenChar: {
+        this.tokenizer.storeToken(TokenType.LINK_BEGIN, this.value + ch);
+        return new TextState(this.tokenizer);
+      }
+      default: {
+        this.tokenizer.storeToken(TokenType.EXT_LINK_BEGIN, this.value);
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer, this.value);
+      }
+    }
+  }
+
+  public terminate(): void {
+    this.tokenizer.storeToken(TokenType.EXT_LINK_BEGIN, this.value);
+  }
+}
+
+///////////////////
+
+// Entered when a ']' is encountered.
+class SquareBracketCloseState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    switch (ch) {
+      case BracketCloseChar: {
+        this.tokenizer.storeToken(TokenType.LINK_END, this.value + ch);
+        return new TextState(this.tokenizer);
+      }
+      default: {
+        this.tokenizer.storeToken(TokenType.EXT_LINK_END, this.value);
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer, this.value);
+      }
+    }
+  }
+
+  public terminate(): void {
+    this.tokenizer.storeToken(TokenType.EXT_LINK_END, this.value);
   }
 }
 
@@ -624,23 +713,26 @@ class TextState extends BaseState implements State {
       case BraceCloseChar: {
         return new BraceCloseState(this.tokenizer, ch);
       }
-      case PipeChar: {
-        return new PipeState(this.tokenizer, ch);
+      case BracketOpenChar: {
+        return new SquareBracketOpenState(this.tokenizer, ch);
       }
-      case ExclamationChar: {
-        return this.processSingleCharacterToken(TokenType.EXCLAMATION_MARK, ch);
+      case BracketCloseChar: {
+        return new SquareBracketCloseState(this.tokenizer, ch);
       }
-      // case '[': {
-      //   return new BracketState(this.tokenizer, ch);
-      // }
       case AngleOpenChar: {
-        return new OpenAngleBracketState(this.tokenizer, ch);
+        return new AngleBracketOpenState(this.tokenizer, ch);
       }
       case AngleCloseChar: {
         // Whether this is a closing tag or a plain '>' depends on the context.
         // Store a close-tag token and leave the context-based processing to the
         // parser.
         return this.processSingleCharacterToken(TokenType.CLOSE_TAG, ch);
+      }
+      case PipeChar: {
+        return new PipeState(this.tokenizer, ch);
+      }
+      case ExclamationChar: {
+        return this.processSingleCharacterToken(TokenType.EXCLAMATION_MARK, ch);
       }
       // case '~': {
       //   return new TildeState(this.tokenizer, ch);
@@ -670,6 +762,9 @@ class TextState extends BaseState implements State {
       }
       case DashChar: {
         return new DashState(this.tokenizer, ch);
+      }
+      case HashChar: {
+        return new HashState(this.tokenizer, ch);
       }
       // case '_': {
       //   return new UnderscoreState(this.tokenizer, ch);

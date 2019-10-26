@@ -40,6 +40,7 @@ export enum TokenType {
   SPACE = 'space', // ' '
   COLON = 'colon', // :
   DASHES = 'dashes', // one or more '-'
+  HASHES = 'hashes', // one or more '#'
   URL = 'url', // http(s)://
   EMAIL = 'email', // mailto:
   REDIRECT = 'redirect', // #REDIRECT
