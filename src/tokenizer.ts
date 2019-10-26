@@ -24,6 +24,7 @@ function countSubstring(text: string, substr: string): number {
 ///////////////////
 
 const EOLChar = '\n';
+const SpaceChar = ' ';
 const SingleQuoteChar = "'"; // eslint-disable-line quotes
 const BraceOpenChar = '{';
 const BraceCloseChar = '}';
@@ -53,6 +54,7 @@ const TableEndMarker = '|}';
 ///////////////////
 
 // Supported HTML tags.
+// Source: https://en.wikipedia.org/wiki/Help:HTML_in_wikitext
 const HtmlTags: string[] = [
   'h1',
   'h2',
@@ -117,6 +119,7 @@ const HtmlTags: string[] = [
 ];
 
 // Wikitext exension tags.
+// Source: https://en.wikipedia.org/wiki/Help:HTML_in_wikitext
 const ExtensionTags: string[] = [
   'categorytree',
   'ce',
@@ -180,6 +183,36 @@ function isExtensionTagPrefix(s: string): boolean {
 
 function isHtmlOrExtensionTagPrefix(s: string): boolean {
   return isHtmlTagPrefix(s) || isExtensionTagPrefix(s);
+}
+
+///////////////////
+
+// Source: https://en.wikipedia.org/wiki/Help:Wikitext#External_links
+const UriSchemes: string[] = [
+  'http://',
+  'https://',
+  'irc://',
+  'ircs://',
+  'ftp://',
+  'news://',
+  'mailto://',
+  'gopher://'
+];
+
+function normalizeUriScheme(s: string): string {
+  return s.toLowerCase();
+}
+
+function isUriScheme(s: string): boolean {
+  return UriSchemes.indexOf(normalizeUriScheme(s)) !== -1;
+}
+
+function isUriSchemePrefix(s: string): boolean {
+  const normalized = normalizeUriScheme(s);
+  return (
+    UriSchemes.findIndex((scheme: string) => scheme.startsWith(normalized)) !==
+    -1
+  );
 }
 
 ///////////////////
@@ -588,7 +621,7 @@ class BraceCloseState extends BaseState implements State {
 ///////////////////
 
 // Entered when a '[' is encountered.
-class SquareBracketOpenState extends BaseState implements State {
+class BracketOpenState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
     super(tokenizer, initialValue);
   }
@@ -600,22 +633,22 @@ class SquareBracketOpenState extends BaseState implements State {
         return new TextState(this.tokenizer);
       }
       default: {
-        this.tokenizer.storeToken(TokenType.EXT_LINK_BEGIN, this.value);
+        this.tokenizer.storeToken(TokenType.OPEN_BRACKET, this.value);
         this.tokenizer.backUpBy(1);
-        return new TextState(this.tokenizer, this.value);
+        return new TextState(this.tokenizer);
       }
     }
   }
 
   public terminate(): void {
-    this.tokenizer.storeToken(TokenType.EXT_LINK_BEGIN, this.value);
+    this.tokenizer.storeToken(TokenType.OPEN_BRACKET, this.value);
   }
 }
 
 ///////////////////
 
 // Entered when a ']' is encountered.
-class SquareBracketCloseState extends BaseState implements State {
+class BracketCloseState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
     super(tokenizer, initialValue);
   }
@@ -627,15 +660,15 @@ class SquareBracketCloseState extends BaseState implements State {
         return new TextState(this.tokenizer);
       }
       default: {
-        this.tokenizer.storeToken(TokenType.EXT_LINK_END, this.value);
+        this.tokenizer.storeToken(TokenType.CLOSE_BRACKET, this.value);
         this.tokenizer.backUpBy(1);
-        return new TextState(this.tokenizer, this.value);
+        return new TextState(this.tokenizer);
       }
     }
   }
 
   public terminate(): void {
-    this.tokenizer.storeToken(TokenType.EXT_LINK_END, this.value);
+    this.tokenizer.storeToken(TokenType.CLOSE_BRACKET, this.value);
   }
 }
 
@@ -685,7 +718,8 @@ class TextState extends BaseState implements State {
   }
 
   public next(ch: Char): State {
-    const nextState: State = this.transition(ch);
+    // Transition based on given character.
+    const nextState: State = this.charTransition(ch);
     if (nextState !== undefined) {
       this.storeTokens();
       return nextState;
@@ -702,7 +736,7 @@ class TextState extends BaseState implements State {
 
   // Transitions to a new state based on a given character.
   // Returns the new state or 'undefined' for no transition.
-  private transition(ch: Char): State {
+  private charTransition(ch: Char): State {
     switch (ch) {
       case SingleQuoteChar: {
         return new QuoteState(this.tokenizer, ch);
@@ -714,10 +748,10 @@ class TextState extends BaseState implements State {
         return new BraceCloseState(this.tokenizer, ch);
       }
       case BracketOpenChar: {
-        return new SquareBracketOpenState(this.tokenizer, ch);
+        return new BracketOpenState(this.tokenizer, ch);
       }
       case BracketCloseChar: {
-        return new SquareBracketCloseState(this.tokenizer, ch);
+        return new BracketCloseState(this.tokenizer, ch);
       }
       case AngleOpenChar: {
         return new AngleBracketOpenState(this.tokenizer, ch);

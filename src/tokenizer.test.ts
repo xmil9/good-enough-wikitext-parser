@@ -29,8 +29,8 @@ const DefaultTokenValues: Map<TokenType, string> = new Map([
   [TokenType.TEMPLATE_END, '}}'],
   [TokenType.LINK_BEGIN, '[['],
   [TokenType.LINK_END, ']]'],
-  [TokenType.EXT_LINK_BEGIN, '['],
-  [TokenType.EXT_LINK_END, ']'],
+  [TokenType.OPEN_BRACKET, '['],
+  [TokenType.CLOSE_BRACKET, ']'],
   [TokenType.PIPE, '|'],
   [TokenType.COLON, ':'],
   [TokenType.TABLE_BEGIN, '{|'],
@@ -121,7 +121,6 @@ describe('text', () => {
 describe('quotes', () => {
   test('bold text', () => {
     const tokens = tokenize("'''bold'''");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.BOLD),
@@ -133,7 +132,6 @@ describe('quotes', () => {
 
   test('embedded bold text', () => {
     const tokens = tokenize("before'''bold'''after");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, 'before'),
@@ -147,7 +145,6 @@ describe('quotes', () => {
 
   test('italic text', () => {
     const tokens = tokenize("''italic''");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.ITALIC),
@@ -159,7 +156,6 @@ describe('quotes', () => {
 
   test('embedded italic text', () => {
     const tokens = tokenize("before''italic''after");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, 'before'),
@@ -173,7 +169,6 @@ describe('quotes', () => {
 
   test('four quotes', () => {
     const tokens = tokenize("''''four''''");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, "'"),
@@ -186,7 +181,6 @@ describe('quotes', () => {
 
   test('four quotes embedded', () => {
     const tokens = tokenize("before''''four''''after");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, "before'"),
@@ -200,7 +194,6 @@ describe('quotes', () => {
 
   test('five quotes', () => {
     const tokens = tokenize("'''''five'''''");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.BOLD),
@@ -214,7 +207,6 @@ describe('quotes', () => {
 
   test('five quotes embedded', () => {
     const tokens = tokenize("before'''''five'''''after");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, 'before'),
@@ -230,7 +222,6 @@ describe('quotes', () => {
 
   test('more than five quotes', () => {
     const tokens = tokenize("'''''''''nine'''''''''");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, "''''"),
@@ -245,7 +236,6 @@ describe('quotes', () => {
 
   test('more than five quotes embedded', () => {
     const tokens = tokenize("before'''''''''nine'''''''''after");
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, "before''''"),
@@ -265,7 +255,6 @@ describe('quotes', () => {
 describe('html tags', () => {
   test('html start tag', () => {
     const tokens = tokenize('<code>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
@@ -277,7 +266,6 @@ describe('html tags', () => {
 
   test('extension start tag', () => {
     const tokens = tokenize('<inputbox>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
@@ -289,7 +277,6 @@ describe('html tags', () => {
 
   test('single letter start tag', () => {
     const tokens = tokenize('<p>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
@@ -301,7 +288,6 @@ describe('html tags', () => {
 
   test('start tag with space', () => {
     const tokens = tokenize('<math chem>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
@@ -313,7 +299,6 @@ describe('html tags', () => {
 
   test('capitalized start tag', () => {
     const tokens = tokenize('<DIV>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
@@ -325,7 +310,6 @@ describe('html tags', () => {
 
   test('start tag with leading and trainling spaces', () => {
     const tokens = tokenize('<  table  >');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
@@ -337,7 +321,6 @@ describe('html tags', () => {
 
   test('start tag embedded in text', () => {
     const tokens = tokenize('before<h2>after');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, 'before'),
@@ -351,7 +334,6 @@ describe('html tags', () => {
 
   test('invalid start tag', () => {
     const tokens = tokenize('<invalid>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, '<invalid'),
@@ -362,7 +344,6 @@ describe('html tags', () => {
 
   test('html end tag', () => {
     const tokens = tokenize('</code>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
@@ -374,7 +355,6 @@ describe('html tags', () => {
 
   test('extension end tag', () => {
     const tokens = tokenize('</inputbox>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
@@ -386,7 +366,6 @@ describe('html tags', () => {
 
   test('single letter end tag', () => {
     const tokens = tokenize('</p>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
@@ -398,7 +377,6 @@ describe('html tags', () => {
 
   test('start end with space', () => {
     const tokens = tokenize('</math chem>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
@@ -410,7 +388,6 @@ describe('html tags', () => {
 
   test('capitalized end tag', () => {
     const tokens = tokenize('</DIV>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
@@ -422,7 +399,6 @@ describe('html tags', () => {
 
   test('end tag with leading and trainling spaces', () => {
     const tokens = tokenize('</  table  >');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
@@ -434,7 +410,6 @@ describe('html tags', () => {
 
   test('end tag embedded in text', () => {
     const tokens = tokenize('before</h2>after');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, 'before'),
@@ -448,7 +423,6 @@ describe('html tags', () => {
 
   test('invalid end tag', () => {
     const tokens = tokenize('</invalid>');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, '</invalid'),
@@ -463,7 +437,6 @@ describe('html tags', () => {
 describe('comments', () => {
   test('basic comment', () => {
     const tokens = tokenize('<!-- comment -->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -475,7 +448,6 @@ describe('comments', () => {
 
   test('single space comment', () => {
     const tokens = tokenize('<!-- -->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -487,7 +459,6 @@ describe('comments', () => {
 
   test('empty comment', () => {
     const tokens = tokenize('<!---->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -498,7 +469,6 @@ describe('comments', () => {
 
   test('multi line comment', () => {
     const tokens = tokenize('<!-- line one\nline two -->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -512,7 +482,6 @@ describe('comments', () => {
 
   test('comment where start token has extra dashes (less than 4)', () => {
     const tokens = tokenize('<!----- comment -->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -527,7 +496,6 @@ describe('comments', () => {
     // Note that this does not result in a horizontal divider token because
     // horizontal divider markers must be at the start of a line.
     const tokens = tokenize('<!------- comment -->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -540,7 +508,6 @@ describe('comments', () => {
 
   test('comment where end token has extra dashes', () => {
     const tokens = tokenize('<!-- comment ----->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -553,7 +520,6 @@ describe('comments', () => {
 
   test('multi line comment where final line starts with a horizontal divider token', () => {
     const tokens = tokenize('<!-- line one\n---->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -567,7 +533,6 @@ describe('comments', () => {
 
   test('comment with invalid start marker', () => {
     const tokens = tokenize('<!- comment -->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, '<!- comment '),
@@ -578,7 +543,6 @@ describe('comments', () => {
 
   test('comment with invalid end marker', () => {
     const tokens = tokenize('<!-- comment ->');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
@@ -595,7 +559,6 @@ describe('comments', () => {
 describe('horizontal dividers', () => {
   test('basic horizontal divider', () => {
     const tokens = tokenize('----');
-
     expect(
       verifyTokenSequence(tokens, [et(TokenType.DASHES, '----')])
     ).toBeTruthy();
@@ -603,7 +566,6 @@ describe('horizontal dividers', () => {
 
   test('horizontal divider with extra dashes', () => {
     const tokens = tokenize('---------');
-
     expect(
       verifyTokenSequence(tokens, [et(TokenType.DASHES, '---------')])
     ).toBeTruthy();
@@ -611,7 +573,6 @@ describe('horizontal dividers', () => {
 
   test('horizontal divider marker that is not at the beginning of a line', () => {
     const tokens = tokenize('a----');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, 'a'),
@@ -622,7 +583,6 @@ describe('horizontal dividers', () => {
 
   test('horizontal divider followed by text', () => {
     const tokens = tokenize('----text');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.DASHES, '----'),
@@ -633,7 +593,6 @@ describe('horizontal dividers', () => {
 
   test('invalid horizontal divider', () => {
     const tokens = tokenize('---');
-
     expect(
       verifyTokenSequence(tokens, [et(TokenType.DASHES, '---')])
     ).toBeTruthy();
@@ -645,7 +604,6 @@ describe('horizontal dividers', () => {
 describe('templates', () => {
   test('basic template', () => {
     const tokens = tokenize('{{name}}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEMPLATE_BEGIN),
@@ -657,7 +615,6 @@ describe('templates', () => {
 
   test('empty template', () => {
     const tokens = tokenize('{{}}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEMPLATE_BEGIN),
@@ -668,7 +625,6 @@ describe('templates', () => {
 
   test('template with parameters', () => {
     const tokens = tokenize('{{name|param1|param2}}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEMPLATE_BEGIN),
@@ -684,7 +640,6 @@ describe('templates', () => {
 
   test('template with namespace', () => {
     const tokens = tokenize('{{ns:name}}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEMPLATE_BEGIN),
@@ -699,7 +654,6 @@ describe('templates', () => {
   test('nested template', () => {
     // This might not be valid wikitext. The parser should detect it.
     const tokens = tokenize('{{{{}}}}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEMPLATE_BEGIN),
@@ -712,7 +666,6 @@ describe('templates', () => {
 
   test('invalid template start', () => {
     const tokens = tokenize('{name}}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, '{name'),
@@ -723,7 +676,6 @@ describe('templates', () => {
 
   test('invalid template end', () => {
     const tokens = tokenize('{{name}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEMPLATE_BEGIN),
@@ -738,7 +690,6 @@ describe('templates', () => {
 describe('tables', () => {
   test('empty table', () => {
     const tokens = tokenize('{|\n|}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -750,7 +701,6 @@ describe('tables', () => {
 
   test('table with 1 cell', () => {
     const tokens = tokenize('{|\n|a\n|}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -765,7 +715,6 @@ describe('tables', () => {
 
   test('table with 1 row and 1 cell', () => {
     const tokens = tokenize('{|\n|-\n| a\n|}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -782,7 +731,6 @@ describe('tables', () => {
 
   test('table with 1 row and 2 cells', () => {
     const tokens = tokenize('{|\n|-\n| a\n| b\n|}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -802,7 +750,6 @@ describe('tables', () => {
 
   test('table with 2 rows and 1 cell', () => {
     const tokens = tokenize('{|\n|-\n| a\n|-\n| b\n|}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -824,7 +771,6 @@ describe('tables', () => {
 
   test('degenerate table with 1 row and no cell', () => {
     const tokens = tokenize('{|\n|-\n|}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -838,7 +784,6 @@ describe('tables', () => {
 
   test('table with 1 cell and caption', () => {
     const tokens = tokenize('{|\n|+caption\n|a\n|}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -856,7 +801,6 @@ describe('tables', () => {
 
   test('table with 1 cell and header', () => {
     const tokens = tokenize('{|\n!A\n|a\n|}');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -876,7 +820,6 @@ describe('tables', () => {
     const tokens = tokenize(
       '{|\n|+caption\n!A\n!B\n|-\n|a1\n|a2\n|-\n|b1\n|b2\n|}'
     );
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TABLE_BEGIN),
@@ -917,7 +860,6 @@ describe('tables', () => {
 describe('wiki links', () => {
   test('empty link', () => {
     const tokens = tokenize('[[]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -928,7 +870,6 @@ describe('wiki links', () => {
 
   test('basic link', () => {
     const tokens = tokenize('[[link]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -940,7 +881,6 @@ describe('wiki links', () => {
 
   test('link with namespace', () => {
     const tokens = tokenize('[[ns:link]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -954,7 +894,6 @@ describe('wiki links', () => {
 
   test('renamed link', () => {
     const tokens = tokenize('[[link|displayed name]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -968,7 +907,6 @@ describe('wiki links', () => {
 
   test('auto renamed link for parenthesis', () => {
     const tokens = tokenize('[[link (hidden)|]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -981,7 +919,6 @@ describe('wiki links', () => {
 
   test('auto renamed link for comma', () => {
     const tokens = tokenize('[[link, hidden|]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -994,7 +931,6 @@ describe('wiki links', () => {
 
   test('auto renamed link for namespace', () => {
     const tokens = tokenize('[[ns:link|]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -1009,7 +945,6 @@ describe('wiki links', () => {
 
   test('blended link', () => {
     const tokens = tokenize('[[example]]s');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -1022,7 +957,6 @@ describe('wiki links', () => {
 
   test('link to page section', () => {
     const tokens = tokenize('[[page#section]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -1036,7 +970,6 @@ describe('wiki links', () => {
 
   test('link to section on same page', () => {
     const tokens = tokenize('[[#section]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -1063,7 +996,6 @@ describe('wiki links', () => {
 
   test('link with namespace, section, and renaming', () => {
     const tokens = tokenize('[[Wikipedia:Manual of Style#Italics|Italics]]');
-
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
@@ -1075,6 +1007,57 @@ describe('wiki links', () => {
         et(TokenType.PIPE),
         et(TokenType.TEXT, 'Italics'),
         et(TokenType.LINK_END)
+      ])
+    ).toBeTruthy();
+  });
+});
+
+///////////////////
+
+describe('external links', () => {
+  test('empty brackets', () => {
+    const tokens = tokenize('[]');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.OPEN_BRACKET),
+        et(TokenType.CLOSE_BRACKET)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('brackets without link', () => {
+    const tokens = tokenize('[not a link]');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.OPEN_BRACKET),
+        et(TokenType.TEXT, 'not a link'),
+        et(TokenType.CLOSE_BRACKET)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('unnamed link', () => {
+    const tokens = tokenize('[http://www.wikipedia.org]');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.OPEN_BRACKET),
+        et(TokenType.TEXT, 'http'),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, '//www.wikipedia.org'),
+        et(TokenType.CLOSE_BRACKET)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('named link', () => {
+    const tokens = tokenize('[http://www.wikipedia.org Wikipedia]');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.OPEN_BRACKET),
+        et(TokenType.TEXT, 'http'),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, '//www.wikipedia.org Wikipedia'),
+        et(TokenType.CLOSE_BRACKET)
       ])
     ).toBeTruthy();
   });

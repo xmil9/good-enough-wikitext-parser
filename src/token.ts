@@ -33,15 +33,14 @@ export enum TokenType {
   INDENT = 'indent', // : at start of line (count determines indent)
   LINK_BEGIN = 'link-begin', // [[
   LINK_END = 'link-end', // ]]
-  EXT_LINK_BEGIN = 'ext-link-begin', // [
-  EXT_LINK_END = 'ext-link-end', // ]
+  OPEN_BRACKET = 'open-bracket', // [
+  CLOSE_BRACKET = 'close-bracket', // ]
   PIPE = 'pipe', // |
   EXCLAMATION_MARK = 'exclamation-mark', // |
   SPACE = 'space', // ' '
   COLON = 'colon', // :
   DASHES = 'dashes', // one or more '-'
   HASHES = 'hashes', // one or more '#'
-  URL = 'url', // http(s)://
   EMAIL = 'email', // mailto:
   REDIRECT = 'redirect', // #REDIRECT
   FORCETOC = 'forcetoc', // __FORCETOC__
