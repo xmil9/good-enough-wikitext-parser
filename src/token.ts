@@ -60,9 +60,9 @@ export enum TokenType {
 export class Token {
   private readonly _type: TokenType;
   private readonly _value: string;
-  private readonly _lineNum: number;
+  private readonly _lineNum?: number;
 
-  constructor(type: TokenType, value: string, lineNum: number) {
+  constructor(type: TokenType, value: string, lineNum?: number) {
     this._type = type;
     this._value = value;
     this._lineNum = lineNum;
