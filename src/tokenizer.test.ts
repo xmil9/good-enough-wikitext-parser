@@ -98,9 +98,20 @@ class TokenIterator {
 
 describe('text', () => {
   test('plain text', () => {
-    const tokens = tokenize('plain text');
+    const tokens = tokenize('text');
     expect(
-      verifyTokenSequence(tokens, [et(TokenType.TEXT, 'plain text')])
+      verifyTokenSequence(tokens, [et(TokenType.TEXT, 'text')])
+    ).toBeTruthy();
+  });
+
+  test('plain text with space', () => {
+    const tokens = tokenize('with space');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.TEXT, 'with'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'space')
+      ])
     ).toBeTruthy();
   });
 
@@ -440,7 +451,9 @@ describe('comments', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
-        et(TokenType.TEXT, ' comment '),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'comment'),
+        et(TokenType.SPACES, ' '),
         et(TokenType.COMMENT_END)
       ])
     ).toBeTruthy();
@@ -451,7 +464,7 @@ describe('comments', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
-        et(TokenType.TEXT, ' '),
+        et(TokenType.SPACES, ' '),
         et(TokenType.COMMENT_END)
       ])
     ).toBeTruthy();
@@ -472,9 +485,15 @@ describe('comments', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
-        et(TokenType.TEXT, ' line one'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'line'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'one'),
         et(TokenType.EOL),
-        et(TokenType.TEXT, 'line two '),
+        et(TokenType.TEXT, 'line'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'two'),
+        et(TokenType.SPACES, ' '),
         et(TokenType.COMMENT_END)
       ])
     ).toBeTruthy();
@@ -486,7 +505,9 @@ describe('comments', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
         et(TokenType.DASHES, '---'),
-        et(TokenType.TEXT, ' comment '),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'comment'),
+        et(TokenType.SPACES, ' '),
         et(TokenType.COMMENT_END)
       ])
     ).toBeTruthy();
@@ -500,7 +521,9 @@ describe('comments', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
         et(TokenType.DASHES, '-----'),
-        et(TokenType.TEXT, ' comment '),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'comment'),
+        et(TokenType.SPACES, ' '),
         et(TokenType.COMMENT_END)
       ])
     ).toBeTruthy();
@@ -511,7 +534,9 @@ describe('comments', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
-        et(TokenType.TEXT, ' comment '),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'comment'),
+        et(TokenType.SPACES, ' '),
         et(TokenType.DASHES, '---'),
         et(TokenType.COMMENT_END)
       ])
@@ -523,7 +548,10 @@ describe('comments', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
-        et(TokenType.TEXT, ' line one'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'line'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'one'),
         et(TokenType.EOL),
         et(TokenType.DASHES, '--'),
         et(TokenType.COMMENT_END)
@@ -535,7 +563,10 @@ describe('comments', () => {
     const tokens = tokenize('<!- comment -->');
     expect(
       verifyTokenSequence(tokens, [
-        et(TokenType.TEXT, '<!- comment '),
+        et(TokenType.TEXT, '<!-'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'comment'),
+        et(TokenType.SPACES, ' '),
         et(TokenType.COMMENT_END)
       ])
     ).toBeTruthy();
@@ -546,7 +577,9 @@ describe('comments', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.COMMENT_BEGIN),
-        et(TokenType.TEXT, ' comment '),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'comment'),
+        et(TokenType.SPACES, ' '),
         et(TokenType.DASHES, '-'),
         et(TokenType.CLOSE_TAG)
       ])
@@ -722,7 +755,8 @@ describe('tables', () => {
         et(TokenType.TABLE_ROW),
         et(TokenType.EOL),
         et(TokenType.PIPE),
-        et(TokenType.TEXT, ' a'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'a'),
         et(TokenType.EOL),
         et(TokenType.TABLE_END)
       ])
@@ -738,10 +772,12 @@ describe('tables', () => {
         et(TokenType.TABLE_ROW),
         et(TokenType.EOL),
         et(TokenType.PIPE),
-        et(TokenType.TEXT, ' a'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'a'),
         et(TokenType.EOL),
         et(TokenType.PIPE),
-        et(TokenType.TEXT, ' b'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'b'),
         et(TokenType.EOL),
         et(TokenType.TABLE_END)
       ])
@@ -757,12 +793,14 @@ describe('tables', () => {
         et(TokenType.TABLE_ROW),
         et(TokenType.EOL),
         et(TokenType.PIPE),
-        et(TokenType.TEXT, ' a'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'a'),
         et(TokenType.EOL),
         et(TokenType.TABLE_ROW),
         et(TokenType.EOL),
         et(TokenType.PIPE),
-        et(TokenType.TEXT, ' b'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'b'),
         et(TokenType.EOL),
         et(TokenType.TABLE_END)
       ])
@@ -899,7 +937,9 @@ describe('wiki links', () => {
         et(TokenType.LINK_BEGIN),
         et(TokenType.TEXT, 'link'),
         et(TokenType.PIPE),
-        et(TokenType.TEXT, 'displayed name'),
+        et(TokenType.TEXT, 'displayed'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'name'),
         et(TokenType.LINK_END)
       ])
     ).toBeTruthy();
@@ -910,7 +950,9 @@ describe('wiki links', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
-        et(TokenType.TEXT, 'link (hidden)'),
+        et(TokenType.TEXT, 'link'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, '(hidden)'),
         et(TokenType.PIPE),
         et(TokenType.LINK_END)
       ])
@@ -922,7 +964,9 @@ describe('wiki links', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
-        et(TokenType.TEXT, 'link, hidden'),
+        et(TokenType.TEXT, 'link,'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'hidden'),
         et(TokenType.PIPE),
         et(TokenType.LINK_END)
       ])
@@ -988,7 +1032,9 @@ describe('wiki links', () => {
         et(TokenType.COLON),
         et(TokenType.TEXT, 'Category'),
         et(TokenType.COLON),
-        et(TokenType.TEXT, 'Character Sets'),
+        et(TokenType.TEXT, 'Character'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'Sets'),
         et(TokenType.LINK_END)
       ])
     ).toBeTruthy();
@@ -1001,7 +1047,11 @@ describe('wiki links', () => {
         et(TokenType.LINK_BEGIN),
         et(TokenType.TEXT, 'Wikipedia'),
         et(TokenType.COLON),
-        et(TokenType.TEXT, 'Manual of Style'),
+        et(TokenType.TEXT, 'Manual'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'of'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'Style'),
         et(TokenType.HASHES, '#'),
         et(TokenType.TEXT, 'Italics'),
         et(TokenType.PIPE),
@@ -1030,7 +1080,11 @@ describe('external links', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_BRACKET),
-        et(TokenType.TEXT, 'not a link'),
+        et(TokenType.TEXT, 'not'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'a'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'link'),
         et(TokenType.CLOSE_BRACKET)
       ])
     ).toBeTruthy();
@@ -1056,7 +1110,9 @@ describe('external links', () => {
         et(TokenType.OPEN_BRACKET),
         et(TokenType.TEXT, 'http'),
         et(TokenType.COLON),
-        et(TokenType.TEXT, '//www.wikipedia.org Wikipedia'),
+        et(TokenType.TEXT, '//www.wikipedia.org'),
+        et(TokenType.SPACES, ' '),
+        et(TokenType.TEXT, 'Wikipedia'),
         et(TokenType.CLOSE_BRACKET)
       ])
     ).toBeTruthy();

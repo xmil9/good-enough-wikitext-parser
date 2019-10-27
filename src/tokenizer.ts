@@ -406,7 +406,8 @@ class CommentStartState extends BaseState implements State {
       return new TextState(this.tokenizer);
     } else if (!CommentBeginMarker.startsWith(newValue)) {
       // Not a comment. Switch to text.
-      return new TextState(this.tokenizer, newValue);
+      this.tokenizer.backUpBy(1);
+      return new TextState(this.tokenizer, this.value);
     }
 
     // Keep reading the marker.
@@ -464,6 +465,35 @@ class AngleBracketOpenState extends BaseState implements State {
 
   private storeTokens() {
     this.tokenizer.storeToken(TokenType.TEXT, this.value);
+  }
+}
+
+///////////////////
+
+// Entered when a ' ' is encountered.
+class SpaceState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    switch (ch) {
+      case SpaceChar: {
+        // Collect spaces.
+        this.value += ch;
+        return this;
+      }
+      default: {
+        // Store the collected spaces.
+        this.tokenizer.storeToken(TokenType.SPACES, this.value);
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
+    }
+  }
+
+  public terminate(): void {
+    this.tokenizer.storeToken(TokenType.SPACES, this.value);
   }
 }
 
@@ -540,7 +570,7 @@ class HashState extends BaseState implements State {
       }
       default: {
         // Store the collected hashes.
-        this.storeHashes();
+        this.tokenizer.storeToken(TokenType.HASHES, this.value);
         this.tokenizer.backUpBy(1);
         return new TextState(this.tokenizer);
       }
@@ -548,10 +578,6 @@ class HashState extends BaseState implements State {
   }
 
   public terminate(): void {
-    this.storeHashes();
-  }
-
-  private storeHashes(): void {
     this.tokenizer.storeToken(TokenType.HASHES, this.value);
   }
 }
@@ -738,9 +764,6 @@ class TextState extends BaseState implements State {
   // Returns the new state or 'undefined' for no transition.
   private charTransition(ch: Char): State {
     switch (ch) {
-      case SingleQuoteChar: {
-        return new QuoteState(this.tokenizer, ch);
-      }
       case BraceOpenChar: {
         return new BraceOpenState(this.tokenizer, ch);
       }
@@ -761,6 +784,12 @@ class TextState extends BaseState implements State {
         // Store a close-tag token and leave the context-based processing to the
         // parser.
         return this.processSingleCharacterToken(TokenType.CLOSE_TAG, ch);
+      }
+      case SpaceChar: {
+        return new SpaceState(this.tokenizer, ch);
+      }
+      case SingleQuoteChar: {
+        return new QuoteState(this.tokenizer, ch);
       }
       case PipeChar: {
         return new PipeState(this.tokenizer, ch);
