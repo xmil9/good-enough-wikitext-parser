@@ -38,7 +38,7 @@ export enum TokenType {
   PIPE = 'pipe', // |
   EXCLAMATION_MARK = 'exclamation-mark', // !
   SPACES = 'spaces', // one or more ' '
-  COLON = 'colon', // :
+  COLONS = 'colons', // one or more ':'
   SEMICOLONS = 'semicolons', // one or more ';'
   DASHES = 'dashes', // one or more '-'
   HASHES = 'hashes', // one or more '#'

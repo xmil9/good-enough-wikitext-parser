@@ -619,6 +619,35 @@ class AsteriskState extends BaseState implements State {
 
 ///////////////////
 
+// Entered when a ':' is encountered.
+class ColonState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    switch (ch) {
+      case ColonChar: {
+        // Collect colons.
+        this.value += ch;
+        return this;
+      }
+      default: {
+        // Store the collected colons.
+        this.tokenizer.storeToken(TokenType.COLONS, this.value);
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
+    }
+  }
+
+  public terminate(): void {
+    this.tokenizer.storeToken(TokenType.COLONS, this.value);
+  }
+}
+
+///////////////////
+
 // Entered when a ';' is encountered.
 class SemicolonState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
@@ -922,7 +951,7 @@ class TextState extends BaseState implements State {
       //     return new EqualSignState(this.tokenizer, ch);
       //   }
       case ColonChar: {
-        return this.processSingleCharacterToken(TokenType.COLON, ch);
+        return new ColonState(this.tokenizer, ch);
       }
       case SemicolonChar: {
         return new SemicolonState(this.tokenizer, ch);

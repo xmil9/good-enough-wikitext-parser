@@ -32,7 +32,6 @@ const DefaultTokenValues: Map<TokenType, string> = new Map([
   [TokenType.OPEN_BRACKET, '['],
   [TokenType.CLOSE_BRACKET, ']'],
   [TokenType.PIPE, '|'],
-  [TokenType.COLON, ':'],
   [TokenType.TABLE_BEGIN, '{|'],
   [TokenType.TABLE_END, '|}'],
   [TokenType.TABLE_ROW, '|-'],
@@ -677,7 +676,7 @@ describe('templates', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.TEMPLATE_BEGIN),
         et(TokenType.TEXT, 'ns'),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'name'),
         et(TokenType.TEMPLATE_END)
       ])
@@ -923,7 +922,7 @@ describe('wiki links', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
         et(TokenType.TEXT, 'ns'),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'link'),
         et(TokenType.LINK_END)
       ])
@@ -979,7 +978,7 @@ describe('wiki links', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
         et(TokenType.TEXT, 'ns'),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'link'),
         et(TokenType.PIPE),
         et(TokenType.LINK_END)
@@ -1029,9 +1028,9 @@ describe('wiki links', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'Category'),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'Character'),
         et(TokenType.SPACES, ' '),
         et(TokenType.TEXT, 'Sets'),
@@ -1046,7 +1045,7 @@ describe('wiki links', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.LINK_BEGIN),
         et(TokenType.TEXT, 'Wikipedia'),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'Manual'),
         et(TokenType.SPACES, ' '),
         et(TokenType.TEXT, 'of'),
@@ -1096,7 +1095,7 @@ describe('external links', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_BRACKET),
         et(TokenType.TEXT, 'http'),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, '//www.wikipedia.org'),
         et(TokenType.CLOSE_BRACKET)
       ])
@@ -1109,7 +1108,7 @@ describe('external links', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_BRACKET),
         et(TokenType.TEXT, 'http'),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, '//www.wikipedia.org'),
         et(TokenType.SPACES, ' '),
         et(TokenType.TEXT, 'Wikipedia'),
@@ -1281,7 +1280,7 @@ describe('lists', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.SEMICOLONS, ';'),
         et(TokenType.TEXT, 'a'),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'b')
       ])
     ).toBeTruthy();
@@ -1294,11 +1293,35 @@ describe('lists', () => {
         et(TokenType.SEMICOLONS, ';'),
         et(TokenType.TEXT, 'a'),
         et(TokenType.EOL),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'b'),
         et(TokenType.EOL),
-        et(TokenType.COLON),
+        et(TokenType.COLONS, ':'),
         et(TokenType.TEXT, 'c')
+      ])
+    ).toBeTruthy();
+  });
+});
+
+///////////////////
+
+describe('indentation', () => {
+  test('indent with single colon', () => {
+    const tokens = tokenize(':a');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.COLONS, ':'),
+        et(TokenType.TEXT, 'a')
+      ])
+    ).toBeTruthy();
+  });
+
+  test('indent with multiple colons', () => {
+    const tokens = tokenize('::::a');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.COLONS, '::::'),
+        et(TokenType.TEXT, 'a')
       ])
     ).toBeTruthy();
   });
