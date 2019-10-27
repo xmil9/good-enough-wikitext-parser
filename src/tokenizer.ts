@@ -39,6 +39,7 @@ const SlashChar = '/';
 const AsteriskChar = '*';
 const ExclamationChar = '!';
 const ColonChar = ':';
+const SemicolonChar = ';';
 const PlusChar = '+';
 const TildeChar = '~';
 
@@ -615,6 +616,36 @@ class AsteriskState extends BaseState implements State {
     this.tokenizer.storeToken(TokenType.ASTERISKS, this.value);
   }
 }
+
+///////////////////
+
+// Entered when a ';' is encountered.
+class SemicolonState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    switch (ch) {
+      case SemicolonChar: {
+        // Collect semicolons.
+        this.value += ch;
+        return this;
+      }
+      default: {
+        // Store the collected semicolons.
+        this.tokenizer.storeToken(TokenType.SEMICOLONS, this.value);
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
+    }
+  }
+
+  public terminate(): void {
+    this.tokenizer.storeToken(TokenType.SEMICOLONS, this.value);
+  }
+}
+
 ///////////////////
 
 // Entered when a '~' is encountered.
@@ -890,14 +921,11 @@ class TextState extends BaseState implements State {
       //   if (isBOL) {
       //     return new EqualSignState(this.tokenizer, ch);
       //   }
-      // }
-      // case ';': {
-      //   if (isBOL) {
-      //     return new SemicolonState(this.tokenizer, ch);
-      //   }
-      // }
       case ColonChar: {
         return this.processSingleCharacterToken(TokenType.COLON, ch);
+      }
+      case SemicolonChar: {
+        return new SemicolonState(this.tokenizer, ch);
       }
       case AsteriskChar: {
         return new AsteriskState(this.tokenizer, ch);

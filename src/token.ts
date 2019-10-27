@@ -36,9 +36,10 @@ export enum TokenType {
   OPEN_BRACKET = 'open-bracket', // [
   CLOSE_BRACKET = 'close-bracket', // ]
   PIPE = 'pipe', // |
-  EXCLAMATION_MARK = 'exclamation-mark', // |
+  EXCLAMATION_MARK = 'exclamation-mark', // !
   SPACES = 'spaces', // one or more ' '
   COLON = 'colon', // :
+  SEMICOLONS = 'semicolons', // one or more ';'
   DASHES = 'dashes', // one or more '-'
   HASHES = 'hashes', // one or more '#'
   ASTERISKS = 'asterisks', // one or more '*'

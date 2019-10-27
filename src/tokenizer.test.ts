@@ -1274,6 +1274,34 @@ describe('lists', () => {
       ])
     ).toBeTruthy();
   });
+
+  test('basic description list', () => {
+    const tokens = tokenize(';a:b');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.SEMICOLONS, ';'),
+        et(TokenType.TEXT, 'a'),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, 'b')
+      ])
+    ).toBeTruthy();
+  });
+
+  test('multi-line description list', () => {
+    const tokens = tokenize(';a\n:b\n:c');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.SEMICOLONS, ';'),
+        et(TokenType.TEXT, 'a'),
+        et(TokenType.EOL),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, 'b'),
+        et(TokenType.EOL),
+        et(TokenType.COLON),
+        et(TokenType.TEXT, 'c')
+      ])
+    ).toBeTruthy();
+  });
 });
 
 /* eslint-enable quotes */
