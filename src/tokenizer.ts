@@ -39,6 +39,7 @@ const SlashChar = '/';
 const ExclamationChar = '!';
 const ColonChar = ':';
 const PlusChar = '+';
+const TildeChar = '~';
 
 const BoldMarker = "'''"; // eslint-disable-line quotes
 const ItalicMarker = "''"; // eslint-disable-line quotes
@@ -50,6 +51,9 @@ const TemplateBeginMarker = '{{';
 const TemplateEndMarker = '}}';
 const TableBeginMarker = '{|';
 const TableEndMarker = '|}';
+const DateMarker = '~~~~~';
+const SignatureDateMarker = '~~~~';
+const SignatureMarker = '~~~';
 
 ///////////////////
 
@@ -584,6 +588,60 @@ class HashState extends BaseState implements State {
 
 ///////////////////
 
+// Entered when a '~' is encountered.
+class TildeState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    switch (ch) {
+      case TildeChar: {
+        // Collect tildes.
+        this.value += ch;
+        return this;
+      }
+      default: {
+        // Store the collected tildes.
+        this.storeTokens();
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
+    }
+  }
+
+  public terminate(): void {
+    this.storeTokens();
+  }
+
+  private storeTokens() {
+    // Match remaining tildes to largest fitting tilde token.
+    let numTildes = this.value.length;
+    while (numTildes >= 3) {
+      if (numTildes >= 5) {
+        this.tokenizer.storeToken(TokenType.DATE_TIME, DateMarker);
+        numTildes -= 5;
+      } else if (numTildes >= 4) {
+        this.tokenizer.storeToken(
+          TokenType.SIGNATURE_DATETIME,
+          SignatureDateMarker
+        );
+        numTildes -= 4;
+      } else {
+        this.tokenizer.storeToken(TokenType.SIGNATURE, SignatureMarker);
+        numTildes -= 3;
+      }
+    }
+
+    // Store left over tildes as text.
+    if (numTildes > 0) {
+      this.tokenizer.storeToken(TokenType.TEXT, TildeChar.repeat(numTildes));
+    }
+  }
+}
+
+///////////////////
+
 // Entered when a '{' is encountered.
 class BraceOpenState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
@@ -797,9 +855,9 @@ class TextState extends BaseState implements State {
       case ExclamationChar: {
         return this.processSingleCharacterToken(TokenType.EXCLAMATION_MARK, ch);
       }
-      // case '~': {
-      //   return new TildeState(this.tokenizer, ch);
-      // }
+      case TildeChar: {
+        return new TildeState(this.tokenizer, ch);
+      }
       // case '=': {
       //   if (isBOL) {
       //     return new EqualSignState(this.tokenizer, ch);

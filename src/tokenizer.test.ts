@@ -896,7 +896,7 @@ describe('tables', () => {
 ///////////////////
 
 describe('wiki links', () => {
-  test('empty link', () => {
+  test('empty wiki link', () => {
     const tokens = tokenize('[[]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -906,7 +906,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('basic link', () => {
+  test('basic wiki link', () => {
     const tokens = tokenize('[[link]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -917,7 +917,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('link with namespace', () => {
+  test('wiki link with namespace', () => {
     const tokens = tokenize('[[ns:link]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -930,7 +930,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('renamed link', () => {
+  test('renamed wiki link', () => {
     const tokens = tokenize('[[link|displayed name]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -945,7 +945,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('auto renamed link for parenthesis', () => {
+  test('auto renamed wiki link for parenthesis', () => {
     const tokens = tokenize('[[link (hidden)|]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -959,7 +959,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('auto renamed link for comma', () => {
+  test('auto renamed wiki link for comma', () => {
     const tokens = tokenize('[[link, hidden|]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -973,7 +973,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('auto renamed link for namespace', () => {
+  test('auto renamed wiki link for namespace', () => {
     const tokens = tokenize('[[ns:link|]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -987,7 +987,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('blended link', () => {
+  test('blended wiki link', () => {
     const tokens = tokenize('[[example]]s');
     expect(
       verifyTokenSequence(tokens, [
@@ -999,7 +999,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('link to page section', () => {
+  test('wiki link to page section', () => {
     const tokens = tokenize('[[page#section]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -1012,7 +1012,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('link to section on same page', () => {
+  test('wiki link to section on same page', () => {
     const tokens = tokenize('[[#section]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -1024,7 +1024,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('link to category', () => {
+  test('wiki link to category', () => {
     const tokens = tokenize('[[:Category:Character Sets]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -1040,7 +1040,7 @@ describe('wiki links', () => {
     ).toBeTruthy();
   });
 
-  test('link with namespace, section, and renaming', () => {
+  test('wiki link with namespace, section, and renaming', () => {
     const tokens = tokenize('[[Wikipedia:Manual of Style#Italics|Italics]]');
     expect(
       verifyTokenSequence(tokens, [
@@ -1090,7 +1090,7 @@ describe('external links', () => {
     ).toBeTruthy();
   });
 
-  test('unnamed link', () => {
+  test('unnamed external link', () => {
     const tokens = tokenize('[http://www.wikipedia.org]');
     expect(
       verifyTokenSequence(tokens, [
@@ -1103,7 +1103,7 @@ describe('external links', () => {
     ).toBeTruthy();
   });
 
-  test('named link', () => {
+  test('named external link', () => {
     const tokens = tokenize('[http://www.wikipedia.org Wikipedia]');
     expect(
       verifyTokenSequence(tokens, [
@@ -1114,6 +1114,95 @@ describe('external links', () => {
         et(TokenType.SPACES, ' '),
         et(TokenType.TEXT, 'Wikipedia'),
         et(TokenType.CLOSE_BRACKET)
+      ])
+    ).toBeTruthy();
+  });
+});
+
+///////////////////
+
+describe('signing comments', () => {
+  test('signature', () => {
+    const tokens = tokenize('~~~');
+    expect(verifyTokenSequence(tokens, [et(TokenType.SIGNATURE)])).toBeTruthy();
+  });
+
+  test('signature and date', () => {
+    const tokens = tokenize('~~~~');
+    expect(
+      verifyTokenSequence(tokens, [et(TokenType.SIGNATURE_DATETIME)])
+    ).toBeTruthy();
+  });
+
+  test('date', () => {
+    const tokens = tokenize('~~~~~');
+    expect(verifyTokenSequence(tokens, [et(TokenType.DATE_TIME)])).toBeTruthy();
+  });
+
+  test('2 tildes', () => {
+    const tokens = tokenize('~~');
+    expect(
+      verifyTokenSequence(tokens, [et(TokenType.TEXT, '~~')])
+    ).toBeTruthy();
+  });
+
+  test('6 tildes', () => {
+    const tokens = tokenize('~~~~~~');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.DATE_TIME),
+        et(TokenType.TEXT, '~')
+      ])
+    ).toBeTruthy();
+  });
+
+  test('7 tildes', () => {
+    const tokens = tokenize('~~~~~~~');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.DATE_TIME),
+        et(TokenType.TEXT, '~~')
+      ])
+    ).toBeTruthy();
+  });
+
+  test('8 tildes', () => {
+    const tokens = tokenize('~~~~~~~~');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.DATE_TIME),
+        et(TokenType.SIGNATURE)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('9 tildes', () => {
+    const tokens = tokenize('~~~~~~~~~');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.DATE_TIME),
+        et(TokenType.SIGNATURE_DATETIME)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('10 tildes', () => {
+    const tokens = tokenize('~~~~~~~~~~');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.DATE_TIME),
+        et(TokenType.DATE_TIME)
+      ])
+    ).toBeTruthy();
+  });
+
+  test('11 tildes', () => {
+    const tokens = tokenize('~~~~~~~~~~~');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.DATE_TIME),
+        et(TokenType.DATE_TIME),
+        et(TokenType.TEXT, '~')
       ])
     ).toBeTruthy();
   });
