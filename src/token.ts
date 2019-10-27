@@ -41,6 +41,7 @@ export enum TokenType {
   COLON = 'colon', // :
   DASHES = 'dashes', // one or more '-'
   HASHES = 'hashes', // one or more '#'
+  ASTERISKS = 'asterisks', // one or more '*'
   EMAIL = 'email', // mailto:
   REDIRECT = 'redirect', // #REDIRECT
   FORCETOC = 'forcetoc', // __FORCETOC__

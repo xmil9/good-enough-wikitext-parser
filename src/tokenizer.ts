@@ -36,6 +36,7 @@ const PipeChar = '|';
 const DashChar = '-';
 const HashChar = '#';
 const SlashChar = '/';
+const AsteriskChar = '*';
 const ExclamationChar = '!';
 const ColonChar = ':';
 const PlusChar = '+';
@@ -588,6 +589,34 @@ class HashState extends BaseState implements State {
 
 ///////////////////
 
+// Entered when a '*' is encountered.
+class AsteriskState extends BaseState implements State {
+  constructor(tokenizer: Tokenizer, initialValue: string) {
+    super(tokenizer, initialValue);
+  }
+
+  public next(ch: Char): State {
+    switch (ch) {
+      case AsteriskChar: {
+        // Collect asterisks.
+        this.value += ch;
+        return this;
+      }
+      default: {
+        // Store the collected asterisks.
+        this.tokenizer.storeToken(TokenType.ASTERISKS, this.value);
+        this.tokenizer.backUpBy(1);
+        return new TextState(this.tokenizer);
+      }
+    }
+  }
+
+  public terminate(): void {
+    this.tokenizer.storeToken(TokenType.ASTERISKS, this.value);
+  }
+}
+///////////////////
+
 // Entered when a '~' is encountered.
 class TildeState extends BaseState implements State {
   constructor(tokenizer: Tokenizer, initialValue: string) {
@@ -862,16 +891,6 @@ class TextState extends BaseState implements State {
       //     return new EqualSignState(this.tokenizer, ch);
       //   }
       // }
-      // case '*': {
-      //   if (isBOL) {
-      //     return new StarState(this.tokenizer, ch);
-      //   }
-      // }
-      // case '#': {
-      //   if (isBOL) {
-      //     return new HashState(this.tokenizer, ch);
-      //   }
-      // }
       // case ';': {
       //   if (isBOL) {
       //     return new SemicolonState(this.tokenizer, ch);
@@ -879,6 +898,9 @@ class TextState extends BaseState implements State {
       // }
       case ColonChar: {
         return this.processSingleCharacterToken(TokenType.COLON, ch);
+      }
+      case AsteriskChar: {
+        return new AsteriskState(this.tokenizer, ch);
       }
       case DashChar: {
         return new DashState(this.tokenizer, ch);

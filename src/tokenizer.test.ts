@@ -1208,4 +1208,72 @@ describe('signing comments', () => {
   });
 });
 
+///////////////////
+
+describe('lists', () => {
+  test('basic unordered list', () => {
+    const tokens = tokenize('*a\n*b');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.ASTERISKS, '*'),
+        et(TokenType.TEXT, 'a'),
+        et(TokenType.EOL),
+        et(TokenType.ASTERISKS, '*'),
+        et(TokenType.TEXT, 'b')
+      ])
+    ).toBeTruthy();
+  });
+
+  test('indented unordered list', () => {
+    const tokens = tokenize('*a1\n**b1\n***c1\n*a2');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.ASTERISKS, '*'),
+        et(TokenType.TEXT, 'a1'),
+        et(TokenType.EOL),
+        et(TokenType.ASTERISKS, '**'),
+        et(TokenType.TEXT, 'b1'),
+        et(TokenType.EOL),
+        et(TokenType.ASTERISKS, '***'),
+        et(TokenType.TEXT, 'c1'),
+        et(TokenType.EOL),
+        et(TokenType.ASTERISKS, '*'),
+        et(TokenType.TEXT, 'a2')
+      ])
+    ).toBeTruthy();
+  });
+
+  test('basic ordered list', () => {
+    const tokens = tokenize('#a\n#b');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.HASHES, '#'),
+        et(TokenType.TEXT, 'a'),
+        et(TokenType.EOL),
+        et(TokenType.HASHES, '#'),
+        et(TokenType.TEXT, 'b')
+      ])
+    ).toBeTruthy();
+  });
+
+  test('indented ordered list', () => {
+    const tokens = tokenize('#a1\n##b1\n###c1\n#a2');
+    expect(
+      verifyTokenSequence(tokens, [
+        et(TokenType.HASHES, '#'),
+        et(TokenType.TEXT, 'a1'),
+        et(TokenType.EOL),
+        et(TokenType.HASHES, '##'),
+        et(TokenType.TEXT, 'b1'),
+        et(TokenType.EOL),
+        et(TokenType.HASHES, '###'),
+        et(TokenType.TEXT, 'c1'),
+        et(TokenType.EOL),
+        et(TokenType.HASHES, '#'),
+        et(TokenType.TEXT, 'a2')
+      ])
+    ).toBeTruthy();
+  });
+});
+
 /* eslint-enable quotes */
