@@ -548,7 +548,7 @@ class DashState extends BaseState implements State {
         TokenType.DASHES,
         this.value.substring(0, this.value.length - 1)
       );
-      this.tokenizer.storeToken(TokenType.CLOSE_TAG, AngleCloseChar);
+      this.tokenizer.storeToken(TokenType.CLOSE_ANGLE, AngleCloseChar);
     }
   }
 
@@ -839,9 +839,8 @@ class TextState extends BaseState implements State {
       }
       case AngleCloseChar: {
         // Whether this is a closing tag or a plain '>' depends on the context.
-        // Store a close-tag token and leave the context-based processing to the
-        // parser.
-        return this.processSingleCharacterToken(TokenType.CLOSE_TAG, ch);
+        // Leave the context-based processing to the parser.
+        return this.processSingleCharacterToken(TokenType.CLOSE_ANGLE, ch);
       }
       case SpaceChar: {
         return new SpaceState(this.tokenizer, ch);

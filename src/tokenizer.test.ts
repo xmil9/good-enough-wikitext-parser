@@ -22,7 +22,7 @@ const DefaultTokenValues: Map<TokenType, string> = new Map([
   [TokenType.ITALIC, "''"],
   [TokenType.OPEN_START_TAG, '<'],
   [TokenType.OPEN_END_TAG, '</'],
-  [TokenType.CLOSE_TAG, '>'],
+  [TokenType.CLOSE_ANGLE, '>'],
   [TokenType.COMMENT_BEGIN, '<!--'],
   [TokenType.COMMENT_END, '-->'],
   [TokenType.TEMPLATE_BEGIN, '{{'],
@@ -270,7 +270,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
         et(TokenType.TAG_NAME, 'code'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -281,7 +281,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
         et(TokenType.TAG_NAME, 'inputbox'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -292,7 +292,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
         et(TokenType.TAG_NAME, 'p'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -303,7 +303,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
         et(TokenType.TAG_NAME, 'math chem'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -314,7 +314,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
         et(TokenType.TAG_NAME, 'div'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -325,7 +325,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_START_TAG),
         et(TokenType.TAG_NAME, 'table'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -337,7 +337,7 @@ describe('html tags', () => {
         et(TokenType.TEXT, 'before'),
         et(TokenType.OPEN_START_TAG),
         et(TokenType.TAG_NAME, 'h2'),
-        et(TokenType.CLOSE_TAG),
+        et(TokenType.CLOSE_ANGLE),
         et(TokenType.TEXT, 'after')
       ])
     ).toBeTruthy();
@@ -348,7 +348,7 @@ describe('html tags', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, '<invalid'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -359,7 +359,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
         et(TokenType.TAG_NAME, 'code'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -370,7 +370,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
         et(TokenType.TAG_NAME, 'inputbox'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -381,7 +381,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
         et(TokenType.TAG_NAME, 'p'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -392,7 +392,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
         et(TokenType.TAG_NAME, 'math chem'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -403,7 +403,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
         et(TokenType.TAG_NAME, 'div'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -414,7 +414,7 @@ describe('html tags', () => {
       verifyTokenSequence(tokens, [
         et(TokenType.OPEN_END_TAG),
         et(TokenType.TAG_NAME, 'table'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -426,7 +426,7 @@ describe('html tags', () => {
         et(TokenType.TEXT, 'before'),
         et(TokenType.OPEN_END_TAG),
         et(TokenType.TAG_NAME, 'h2'),
-        et(TokenType.CLOSE_TAG),
+        et(TokenType.CLOSE_ANGLE),
         et(TokenType.TEXT, 'after')
       ])
     ).toBeTruthy();
@@ -437,7 +437,7 @@ describe('html tags', () => {
     expect(
       verifyTokenSequence(tokens, [
         et(TokenType.TEXT, '</invalid'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });
@@ -581,7 +581,7 @@ describe('comments', () => {
         et(TokenType.TEXT, 'comment'),
         et(TokenType.SPACES, ' '),
         et(TokenType.DASHES, '-'),
-        et(TokenType.CLOSE_TAG)
+        et(TokenType.CLOSE_ANGLE)
       ])
     ).toBeTruthy();
   });

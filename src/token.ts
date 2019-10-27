@@ -12,8 +12,8 @@ export enum TokenType {
   NEW_PARAGRAPH = 'new-paragraph', // blank line
   OPEN_START_TAG = 'open-start-tag', // <
   OPEN_END_TAG = 'open-end-tag', // </
-  CLOSE_TAG = 'close-tag', // >
-  CLOSE_AND_END_TAG = 'close-and-end-tag', // />
+  CLOSE_ANGLE = 'close-angle', // >
+  END_TAG = 'end-tag', // />
   TAG_NAME = 'tag-name', // name of html or wikitext extension tag
   SIGNATURE = 'signature', // ~~~
   SIGNATURE_DATETIME = 'signature-date-time', // ~~~~
